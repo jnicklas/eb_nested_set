@@ -2,6 +2,7 @@ require 'rubygems'
 require 'rake/gempackagetask'
 require 'rubygems/specification'
 require 'date'
+require 'spec/rake/spectask'
 
 PLUGIN = "even_better_nested_set"
 NAME = "even_better_nested_set"
@@ -57,3 +58,47 @@ namespace :jruby do
   end
   
 end
+
+file_list = FileList['spec/*_spec.rb']
+
+namespace :spec do
+  desc "Run all examples with RCov"
+  Spec::Rake::SpecTask.new('rcov') do |t|
+    t.spec_files = file_list
+    t.rcov = true
+    t.rcov_dir = "doc/coverage"
+    t.rcov_opts = ['--exclude', 'spec']
+  end
+  
+  desc "Generate an html report"
+  Spec::Rake::SpecTask.new('report') do |t|
+    t.spec_files = file_list
+    t.rcov = true
+    t.rcov_dir = "doc/coverage"
+    t.rcov_opts = ['--exclude', 'spec']
+    t.spec_opts = ["--format", "html:doc/reports/specs.html"]
+    t.fail_on_error = false
+  end
+  
+  desc "heckle all"
+  task :heckle => [ 'spec:heckle:uploaded_file', 'spec:heckle:sanitized_file' ]
+  
+  namespace :heckle do
+    desc "Heckle UploadedFile"
+    Spec::Rake::SpecTask.new('uploaded_file') do |t|
+      t.spec_files = [ File.join(File.dirname(__FILE__), *%w[spec uploaded_file_spec.rb]) ]
+      t.spec_opts = ["--heckle", "UploadColumn::UploadedFile"]
+    end
+    
+    desc "Heckle SanitizedFile"
+    Spec::Rake::SpecTask.new('sanitized_file') do |t|
+      t.spec_files = [ File.join(File.dirname(__FILE__), *%w[spec uploaded_file_spec.rb]) ]
+      t.spec_opts = ["--heckle", "UploadColumn::SanitizedFile"]
+    end
+  end
+
+end
+
+
+desc 'Default: run unit tests.'
+task :default => 'spec:rcov'

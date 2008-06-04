@@ -3,6 +3,7 @@ $:.push File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'rubygems'
 require 'active_record'
+require 'ruby-debug'
 
 require 'even_better_nested_set'
 
@@ -17,9 +18,10 @@ dbconfig = {
 ActiveRecord::Base.establish_connection(dbconfig)
 ActiveRecord::Migration.verbose = false
 
-class Directory < ActiveRecord::Base
-  acts_as_nested_set
-end
+
+
+#ActiveRecord::Base.logger = Logger.new(STDOUT)
+
 
 class TestMigration < ActiveRecord::Migration
   def self.up
