@@ -1,5 +1,3 @@
-require File.dirname(__FILE__) + '/spec_helper'
-
 describe "all nested set models", :shared => true do
 
   describe @model, 'model with acts_as_nested_set' do
@@ -165,9 +163,7 @@ describe "all nested set models", :shared => true do
     
     describe "#family" do
       
-      it "should combine descendants, self and siblings" do
-        
-      end
+      it "should combine descendants, self and siblings"
       
     end
     
