@@ -77,6 +77,10 @@ module EvenBetterNestedSet
       @descendants
     end
     
+    def nested_set
+      self.children
+    end
+    
     def bounds
       self.left..self.right
     end

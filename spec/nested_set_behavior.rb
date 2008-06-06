@@ -163,6 +163,19 @@ describe "all nested set models", :shared => true do
       
     end
     
+    describe "#nested_set" do
+      
+      it "should find descendant nodes for this node as a nested set" do
+        roots = @r1c2.nested_set
+        
+        roots[0].should == @r1c2s1
+        roots[1].should == @r1c2s2
+        roots[1].children[0].should == @r1c2s2m1
+        roots[2].should == @r1c2s3
+      end
+      
+    end
+    
     describe "#parent" do
       
       it "should find the parent node" do
