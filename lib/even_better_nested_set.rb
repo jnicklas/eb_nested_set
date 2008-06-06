@@ -108,8 +108,7 @@ module EvenBetterNestedSet
           
             # move itself and children into the opened space 
             shift_difference = @parent.right - self.left
-            direction = (shift_difference > 0) ? '+' : '-'
-            self.shift!(direction, shift_difference.abs, self.left, self.right)
+            self.shift_right!(shift_difference, self.left, self.right) # shifts left if shift_diff is negative
           
             # close up the space that was left behind after move
             self.shift_left!(difference, self.left)
