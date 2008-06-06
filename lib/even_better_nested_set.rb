@@ -98,25 +98,30 @@ module EvenBetterNestedSet
           self.reload
           difference = self.right - self.left + 1
           
-          # non-root moved to non-root
+          # moved to non-root
           if @parent
             @parent.reload
             
+            # open up a space
             self.shift_right!(difference, @parent.right)
             self.reload
           
+            # move itself and children into the opened space 
             shift_difference = @parent.right - self.left
             direction = (shift_difference > 0) ? '+' : '-'
             self.shift!(direction, shift_difference.abs, self.left, self.right)
           
+            # close up the space that was left behind after move
             self.shift_left!(difference, self.left)
-          # used to be non-root, but will be root now
+          # moved to root
           else
             last_root = self.class.base_class.find(:first, :order => 'right DESC', :conditions => { :parent_id => nil })
             
+            # move to end of tree, after last root node
             shift_difference = last_root.right - self.left + 1
             self.shift_right!(shift_difference, self.left, self.right)
           
+            # close up the space that was left behind after move
             self.shift_left!(difference, self.left)          
           end
         end
