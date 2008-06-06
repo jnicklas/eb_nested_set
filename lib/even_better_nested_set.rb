@@ -9,52 +9,12 @@ module EvenBetterNestedSet
     base.extend ClassMethods
   end
   
-  def greater_left_attribute
-    if self.left and self.right and self.left > self.right
-      self.errors.add(:left, "Left must not be greater than right!")
-    end
-  end
-  
-  def odd_left_right_difference
-    if self.left and self.right and ((self.right - self.left) % 2).zero?
-      self.errors.add(:left, "The difference between the left and right bounds must be an odd number!")
-    end
-  end
-  
   module NestedSetMethods
     
-    def insert_node
-      if self.parent
-        self.parent.reload
-        right_bound = self.parent.right
-        self.left = right_bound
-        self.right = right_bound + 1
-      else
-        last_root = self.class.find(:first, :order => 'right DESC', :conditions => { :parent_id => nil })
-        self.left = last_root ? (last_root.right + 1) : 1
-        self.right = last_root ? (last_root.right + 2) : 2
-      end
-    end
-    
-    def shift_in_node
-      if self.parent
-        # FIXME: there is a locking issue here, which probably fucks up badly with concurrent access
-        old_parent_right = parent.right
-        parent.reload
-        raise "parent boundaries have changed" unless parent.right = old_parent_right
-        #parent.right += 2
-        
-        self.class.base_class.update_all( "left = (left + 2)",  ["left >= ? AND NOT #{self.class.base_class.primary_key} = ?", self.left, self.id] )
-        self.class.base_class.update_all( "right = (right + 2)",  ["right >= ? AND NOT #{self.class.base_class.primary_key} = ?", self.left, self.id] )
-
-        #parent.save!
-      end
-    end
-    
-    def parent=(parent)
-      @parent_changed = true
-      self.cache_parent(parent)
-      self.parent_id = parent ? parent.id : nil
+    def parent=(new_parent)
+      @old_parent = self.parent
+      self.cache_parent(new_parent)
+      self.parent_id = new_parent ? parent.id : nil
     end
     
     def parent
@@ -63,7 +23,7 @@ module EvenBetterNestedSet
     
     def children
       return @children if @children
-      self.fetch_descendants
+      @descendants, @children = self.fetch_descendants
       @children
     end
     
@@ -73,7 +33,7 @@ module EvenBetterNestedSet
     
     def descendants
       return @descendants if @descendants
-      self.fetch_descendants
+      @descendants, @children = self.fetch_descendants
       @descendants
     end
     
@@ -81,16 +41,16 @@ module EvenBetterNestedSet
       self.children
     end
     
-    def bounds
-      self.left..self.right
-    end
-    
     def generation
-      @generation ||= self.parent ? self.parent.children : self.class.base_class.roots.find(:all)
+      @generation ||= self.parent ? self.parent.nested_set : self.class.base_class.nested_set
     end
     
     def siblings
       @siblings ||= (self.generation - [self])
+    end
+    
+    def bounds
+      self.left..self.right
     end
     
     def cache_parent(parent) #:nodoc:
@@ -104,20 +64,36 @@ module EvenBetterNestedSet
     
     protected
     
+    def remove_node
+      difference = (self.right - self.left + 1)
+      self.class.base_class.delete_all(['left > ? AND right < ?', self.left, self.right])
+      
+      self.class.base_class.update_all( "left = (left - #{difference})",  ["left >= ?", self.right] )
+      self.class.base_class.update_all( "right = (right - #{difference})",  ["right >= ?", self.right] )
+    end
+    
+    def append_node
+      transaction do
+        if self.parent
+          self.parent.reload
+          right_bound = self.parent.right
+          self.left = right_bound
+          self.right = right_bound + 1
+        
+          self.class.base_class.update_all( "left = (left + 2)",  ["left >= ?", right_bound] )
+          self.class.base_class.update_all( "right = (right + 2)",  ["right >= ?", right_bound] )
+        else
+          last_root = self.class.find(:first, :order => 'right DESC', :conditions => { :parent_id => nil })
+          self.left = last_root ? (last_root.right + 1) : 1
+          self.right = last_root ? (last_root.right + 2) : 2
+        end
+      end
+    end
+    
     def fetch_descendants
-      @descendants = self.class.base_class.find_descendants(self)
-      @children = self.class.base_class.sort_nodes_to_nested_set(@descendants)
-    end
-  
-    def parent_changed?
-      @parent_changed
-    end
-    
-    def parent_cached?; @parent; end
-    def children_cached?; @children; end
-    
-    def reset_cache
-      @children, @parent = nil
+      descendants = self.class.base_class.find_descendants(self)
+      children = self.class.base_class.sort_nodes_to_nested_set(descendants)
+      return [descendants, children]
     end
   end
   
@@ -160,16 +136,13 @@ module EvenBetterNestedSet
   module ClassMethods
     
     def acts_as_nested_set
-      validates_presence_of :left, :right
-      validate :greater_left_attribute
-      validate :odd_left_right_difference
-      
       include NestedSetMethods
       extend NestedSetClassMethods
       named_scope :roots, :conditions => { :parent_id => nil}
       
-      before_validation_on_create :insert_node
-      after_create :shift_in_node
+      before_create :append_node
+      after_destroy :remove_node
+      #attr_protected :left, :right
     end
     
   end
