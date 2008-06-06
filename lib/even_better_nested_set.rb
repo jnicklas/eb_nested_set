@@ -89,23 +89,20 @@ module EvenBetterNestedSet
       @siblings ||= (self.generation - [self])
     end
     
+    def cache_parent(parent) #:nodoc:
+      @parent = parent
+    end
+    
+    def cache_child(child) #:nodoc:
+      @children ||= []
+      @children << child
+    end
+    
     protected
     
     def fetch_descendants
-      @descendants = self.class.base_class.find(:all, :order => :left, :conditions => ["left > ? AND right < ?", self.left, self.right])
-      reset_cache
-      
-      hashmap = { self.id => self }
-      for descendant in @descendants
-        parent = hashmap[descendant.parent_id]
-
-        if parent
-          descendant.cache_parent(parent)
-          parent.cache_child(descendant)
-        end
-        
-        hashmap[descendant.id] = descendant
-      end
+      @descendants = self.class.base_class.find_descendants(self)
+      @children = self.class.base_class.sort_nodes_to_nested_set(@descendants)
     end
   
     def parent_changed?
@@ -115,27 +112,46 @@ module EvenBetterNestedSet
     def parent_cached?; @parent; end
     def children_cached?; @children; end
     
-    def cache_parent(parent)
-      @parent = parent
-    end
-    
-    def cache_child(child)
-      @children ||= []
-      @children << child
-    end
-    
     def reset_cache
       @children, @parent = nil
     end
   end
   
-  #module NestedSetClassMethods
-  #  
-  #  def find_root_nodes(options={})
-  #    self.find(:all, :conditions => options.merge(:parent_id => nil))
-  #  end
-  #  
-  #end
+  module NestedSetClassMethods
+    
+    def find_descendants(node)
+      self.find(:all, :order => 'left ASC', :conditions => ["left > ? AND right < ?", node.left, node.right])
+    end
+    
+    def nested_set(parent=nil)
+      if parent
+        sort_nodes_to_nested_set(self.find_descendants(parent))
+      else
+        sort_nodes_to_nested_set(self.find(:all, :order => 'left ASC'))
+      end
+    end
+    
+    def sort_nodes_to_nested_set(nodes)
+      roots = []
+      hashmap = {}
+      for node in nodes
+        # if the parent is not in the hashmap, parent will be nil, therefore node will be a root node
+        # in that case
+        parent = node.parent_id ? hashmap[node.parent_id] : nil
+
+        if parent
+          node.cache_parent(parent)
+          parent.cache_child(node)
+        else
+          roots << node
+        end
+        
+        hashmap[node.id] = node
+      end
+      return roots
+    end
+    
+  end
   
   module ClassMethods
     
@@ -145,6 +161,7 @@ module EvenBetterNestedSet
       validate :odd_left_right_difference
       
       include NestedSetMethods
+      extend NestedSetClassMethods
       named_scope :roots, :conditions => { :parent_id => nil}
       
       before_validation_on_create :insert_node

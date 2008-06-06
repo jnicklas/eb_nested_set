@@ -100,6 +100,69 @@ describe "all nested set models", :shared => true do
       @model.roots.first.should == @r1
     end
     
+    describe ".nested_set" do
+      it "should find all nodes as a nested set" do
+        roots = @model.nested_set
+        
+        roots[0].should == @r1
+        roots[0].children[0].should == @r1c1
+        roots[0].children[0].children[0].should == @r1c1s1
+        roots[0].children[1].should == @r1c2
+        roots[0].children[1].children[0].should == @r1c2s1
+        roots[0].children[1].children[1].should == @r1c2s2
+        roots[0].children[1].children[1].children[0].should == @r1c2s2m1
+        roots[0].children[1].children[2].should == @r1c2s3
+        roots[0].children[2].should == @r1c3
+        roots[1].should == @r2
+        roots[1].children[0].should == @r2c1
+        roots[2].should == @r3
+      end
+      
+      it "should find nodes for a specific parent as a nested set" do
+        roots = @model.nested_set(@r1c2)
+        
+        roots[0].should == @r1c2s1
+        roots[1].should == @r1c2s2
+        roots[1].children[0].should == @r1c2s2m1
+        roots[2].should == @r1c2s3
+      end
+    end
+    
+    describe ".sort_nodes_to_nested_set" do
+      
+      it "should accept a list of nodes and sort them to a nested set" do
+        roots = @model.sort_nodes_to_nested_set(@model.find(:all))
+        roots[0].should == @r1
+        roots[0].children[0].should == @r1c1
+        roots[0].children[0].children[0].should == @r1c1s1
+        roots[0].children[1].should == @r1c2
+        roots[0].children[1].children[0].should == @r1c2s1
+        roots[0].children[1].children[1].should == @r1c2s2
+        roots[0].children[1].children[1].children[0].should == @r1c2s2m1
+        roots[0].children[1].children[2].should == @r1c2s3
+        roots[0].children[2].should == @r1c3
+        roots[1].should == @r2
+        roots[1].children[0].should == @r2c1
+        roots[2].should == @r3
+      end
+      
+    end
+    
+    describe ".find_descendants" do
+      
+      it "should find all descendants for a specific node" do
+        
+        roots = @model.find_descendants(@r1c2)
+        
+        roots[0].should == @r1c2s1
+        roots[1].should == @r1c2s2
+        roots[2].should == @r1c2s2m1
+        roots[3].should == @r1c2s3
+        
+      end
+      
+    end
+    
     describe "#parent" do
       
       it "should find the parent node" do
