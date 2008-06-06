@@ -42,10 +42,6 @@ describe "all nested set models", :shared => true do
       @r1c2s3 = @model.create!(valid_attributes(:parent => @r1c2))
 
       @r1c2s2m1 = @model.create!(valid_attributes(:parent => @r1c2s2))
-      
-      [@r1, @r2, @r3, @r1c1, @r1c2, @r1c3, @r2c1, @r1c1s1, @r1c2s1, @r1c2s2, @r1c2s3, @r1c2s2m1].each do |m|
-        m.reload
-      end
     end
     
     after do
@@ -88,13 +84,63 @@ describe "all nested set models", :shared => true do
       @r1c3.right.should == 7
       
       @r2.left.should == 9
-      @r2.right.should == 20
+      @r2.right.should == 22
       
-      @r1c1.left.should == 10
-      @r1c2.right.should == 19
+      @r1c2.left.should == 12
+      @r1c2.right.should == 21
       
-      @r1c1s1.left.should == 11
-      @r1c1s1.right.should == 12
+      @r1c2s1.left.should == 13
+      @r1c2s1.right.should == 14
+    end
+    
+    it "should maintain the integrity of the tree if a node is moved to a root position" do
+      @r1c2.parent = nil
+      @r1c2.save!
+      
+      @r1.reload
+      @r1c3.reload
+      @r2.reload
+      @r1c2.reload
+      @r1c2s1.reload
+      
+      @r1.left.should == 1
+      @r1.right.should == 8
+      @r1c3.left.should == 6
+      @r1c3.right.should == 7
+      
+      @r1c2.left.should == 15
+      @r1c2.right.should == 24
+      
+      @r1c2s1.left.should == 16
+      @r1c2s1.right.should == 17
+    end
+    
+    it "should maintain the integrity of the tree if a root is to a non-root position" do
+      @r1c2.reload
+      @r2.parent = @r1c2
+      @r2.save!
+      
+      @r1.reload
+      @r2.reload
+      @r2c1.reload
+      @r1c3.reload
+      @r3.reload
+      @r1c2.reload
+      
+      @r1c2.right.should == 19      
+      @r1.right.should == 22
+
+      @r1c3.left.should == 20
+      @r1c3.right.should == 21
+      
+      @r3.left.should == 23
+      @r3.right.should == 24
+      
+      @r2.left.should == 15
+      @r2.right.should == 18
+      
+      @r2c1.left.should == 16
+      @r2c1.right.should == 17
     end
     
     describe ".nested_set" do

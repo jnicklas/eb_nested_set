@@ -18,7 +18,15 @@ dbconfig = {
 ActiveRecord::Base.establish_connection(dbconfig)
 ActiveRecord::Migration.verbose = false
 
-
+def show_model_variables_for(context, model)
+  context.instance_variables.sort.each do |i|
+    m = eval(i)
+    if m.is_a?(model)
+      m.reload
+      puts "#{i.ljust(8)}\t#{m.left}\t#{m.right}\t#{m.name}"
+    end
+  end
+end
 
 #ActiveRecord::Base.logger = Logger.new(STDOUT)
 
