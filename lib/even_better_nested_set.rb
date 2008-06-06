@@ -31,7 +31,7 @@ module EvenBetterNestedSet
     def patriarch
       transaction do
         self.reload
-        @patriarch ||= self.class.base_class.find(:first, :conditions => ["left < ? AND right > ? AND parent_id IS NULL", self.left, self.right])
+        @patriarch ||= self.class.base_class.find(:first, :conditions => ["`left` < ? AND `right` > ? AND parent_id IS NULL", self.left, self.right])
       end
     end
     
@@ -70,7 +70,7 @@ module EvenBetterNestedSet
     
     def remove_node
       difference = (self.right - self.left + 1)
-      self.class.base_class.delete_all(['left > ? AND right < ?', self.left, self.right])
+      self.class.base_class.delete_all(['`left` > ? AND `right` < ?', self.left, self.right])
       
       self.shift_left!(difference, self.right)
     end
@@ -85,7 +85,7 @@ module EvenBetterNestedSet
         
           self.shift_right!(2, boundary)
         else
-          last_root = self.class.base_class.find(:first, :order => 'right DESC', :conditions => { :parent_id => nil })
+          last_root = self.class.base_class.find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
           self.left = last_root ? (last_root.right + 1) : 1
           self.right = last_root ? (last_root.right + 2) : 2
         end
@@ -114,7 +114,7 @@ module EvenBetterNestedSet
             self.shift_left!(difference, self.left)
           # moved to root
           else
-            last_root = self.class.base_class.find(:first, :order => 'right DESC', :conditions => { :parent_id => nil })
+            last_root = self.class.base_class.find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
             
             # move to end of tree, after last root node
             shift_difference = last_root.right - self.left + 1
@@ -137,11 +137,11 @@ module EvenBetterNestedSet
     
     def shift!(direction, positions, left_boundary, right_boundary=nil)
       if right_boundary
-        self.class.base_class.update_all( "left = (left #{direction} #{positions})",  ["left >= ? AND left <= ?", left_boundary, right_boundary] )
-        self.class.base_class.update_all( "right = (right #{direction} #{positions})",  ["right >= ? AND right <= ?", left_boundary, right_boundary] )
+        self.class.base_class.update_all( "`left` = (`left` #{direction} #{positions})",  ["`left` >= ? AND `left` <= ?", left_boundary, right_boundary] )
+        self.class.base_class.update_all( "`right` = (`right` #{direction} #{positions})",  ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary] )
       else
-        self.class.base_class.update_all( "left = (left #{direction} #{positions})",  ["left >= ?", left_boundary] )
-        self.class.base_class.update_all( "right = (right #{direction} #{positions})",  ["right >= ?", left_boundary] )        
+        self.class.base_class.update_all( "`left` = (`left` #{direction} #{positions})",  ["`left` >= ?", left_boundary] )
+        self.class.base_class.update_all( "`right` = (`right` #{direction} #{positions})",  ["`right` >= ?", left_boundary] )        
       end
     end
     
@@ -161,7 +161,7 @@ module EvenBetterNestedSet
     def find_descendants(node)
       transaction do
         node.reload
-        self.find(:all, :order => 'left ASC', :conditions => ["left > ? AND right < ?", node.left, node.right])
+        self.find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", node.left, node.right])
       end
     end
     
@@ -169,7 +169,7 @@ module EvenBetterNestedSet
       if parent
         sort_nodes_to_nested_set(self.find_descendants(parent))
       else
-        sort_nodes_to_nested_set(self.find(:all, :order => 'left ASC'))
+        sort_nodes_to_nested_set(self.find(:all, :order => '`left` ASC'))
       end
     end
     
