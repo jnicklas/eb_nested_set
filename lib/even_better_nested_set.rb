@@ -12,49 +12,50 @@ module EvenBetterNestedSet
   module NestedSetMethods
     
     def parent=(new_parent)
-      return if new_parent == self.parent
+      return if new_parent == parent
       @moved = true
       @parent = new_parent
       self.parent_id = new_parent ? parent.id : nil
     end
     
-    def parent
-      @parent ||= self.class.base_class.find_by_id(self.parent_id)
+    def parent(reload=false)
+      @parent = nil if reload
+      @parent ||= base_class.find_by_id(parent_id)
     end
     
     def children
       return @children if @children
-      @descendants, @children = self.fetch_descendants
+      @descendants, @children = fetch_descendants
       @children
     end
     
     def patriarch
       transaction do
-        self.reload
-        @patriarch ||= self.class.base_class.find(:first, :conditions => ["`left` < ? AND `right` > ? AND parent_id IS NULL", self.left, self.right])
+        reload
+        @patriarch ||= base_class.find(:first, :conditions => ["`left` < ? AND `right` > ? AND parent_id IS NULL", left, right])
       end
     end
     
     def descendants
       return @descendants if @descendants
-      @descendants, @children = self.fetch_descendants
+      @descendants, @children = fetch_descendants
       @descendants
     end
     
     def nested_set
-      self.children
+      children
     end
     
     def generation
-      @generation ||= self.parent ? self.parent.nested_set : self.class.base_class.nested_set
+      @generation ||= parent ? parent.nested_set : base_class.nested_set
     end
     
     def siblings
-      @siblings ||= (self.generation - [self])
+      @siblings ||= (generation - [self])
     end
     
     def bounds
-      self.left..self.right
+      left..right
     end
     
     def cache_parent(parent) #:nodoc:
@@ -69,107 +70,107 @@ module EvenBetterNestedSet
     protected
     
     def remove_node
-      difference = (self.right - self.left + 1)
-      self.class.base_class.delete_all(['`left` > ? AND `right` < ?', self.left, self.right])
+      base_class.delete_all ['`left` > ? AND `right` < ?', left, right] # TODO: Figure out what to do with children's destroy callbacks
       
-      self.shift_left!(difference, self.right)
+      shift_left! node_width, right
     end
     
     def append_node
-      transaction do
-        if self.parent
-          self.parent.reload
-          boundary = self.parent.right
-          self.left = boundary
-          self.right = boundary + 1
-        
-          self.shift_right!(2, boundary)
-        else
-          last_root = self.class.base_class.find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
-          self.left = last_root ? (last_root.right + 1) : 1
-          self.right = last_root ? (last_root.right + 2) : 2
-        end
+      boundary = 1
+      
+      if parent
+        transaction do
+          boundary = parent(true).right
+          shift_right! 2, boundary
+        end      
+      elsif last_root = base_class.find_last_root
+        boundary = last_root.right + 1
       end
+      
+      self.left  = boundary
+      self.right = left + 1
     end
     
     def move_node
-      transaction do
-        if @moved
-          self.reload
-          difference = self.right - self.left + 1
+      if @moved
+        transaction do
+          reload
           
-          # moved to non-root
-          if @parent
+          if @parent # moved to non-root
             @parent.reload
-            
+
             # open up a space
-            self.shift_right!(difference, @parent.right)
-            self.reload
+            boundary = @parent.right
+            shift_right! node_width, boundary
+            reload
           
-            # move itself and children into the opened space 
             shift_difference = @parent.right - self.left
-            self.shift_right!(shift_difference, self.left, self.right) # shifts left if shift_diff is negative
-          
-            # close up the space that was left behind after move
-            self.shift_left!(difference, self.left)
-          # moved to root
-          else
-            last_root = self.class.base_class.find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
-            
-            # move to end of tree, after last root node
-            shift_difference = last_root.right - self.left + 1
-            self.shift_right!(shift_difference, self.left, self.right)
-          
-            # close up the space that was left behind after move
-            self.shift_left!(difference, self.left)          
+          else # moved to root
+            shift_difference = base_class.find_last_root.right - left + 1
           end
+          
+          # move itself and children into place
+          shift_right! shift_difference, left, right # shifts left if shift_diff is negative
+          
+          # close up the space that was left behind after move
+          shift_left! node_width, left
         end
       end
     end
     
     def shift_left!(positions, left_boundary, right_boundary=nil)
-      shift!('-', positions, left_boundary, right_boundary)
+      shift! '-', positions, left_boundary, right_boundary
     end
     
     def shift_right!(positions, left_boundary, right_boundary=nil)
-      shift!('+', positions, left_boundary, right_boundary)
+      shift! '+', positions, left_boundary, right_boundary
     end
     
     def shift!(direction, positions, left_boundary, right_boundary=nil)
       if right_boundary
-        self.class.base_class.update_all( "`left` = (`left` #{direction} #{positions})",  ["`left` >= ? AND `left` <= ?", left_boundary, right_boundary] )
-        self.class.base_class.update_all( "`right` = (`right` #{direction} #{positions})",  ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary] )
+        base_class.update_all "`left`  = (`left`  #{direction} #{positions})", ["`left`  >= ? AND `left`  <= ?", left_boundary, right_boundary]
+        base_class.update_all "`right` = (`right` #{direction} #{positions})", ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary]
       else
-        self.class.base_class.update_all( "`left` = (`left` #{direction} #{positions})",  ["`left` >= ?", left_boundary] )
-        self.class.base_class.update_all( "`right` = (`right` #{direction} #{positions})",  ["`right` >= ?", left_boundary] )        
+        base_class.update_all "`left`  = (`left`  #{direction} #{positions})", ["`left` >= ?", left_boundary]
+        base_class.update_all "`right` = (`right` #{direction} #{positions})", ["`right` >= ?", left_boundary]
       end
     end
     
     def fetch_descendants
-      ds = nil
       transaction do
-        self.reload
-        ds = self.class.base_class.find_descendants(self)
+        reload
+        ds = base_class.find_descendants(self)
+        [ds, base_class.sort_nodes_to_nested_set(ds)]
       end
-      children = self.class.base_class.sort_nodes_to_nested_set(ds)
-      return [ds, children]
+    end
+    
+    def node_width
+      right - left + 1
+    end
+    
+    def base_class
+      self.class.base_class
     end
   end
   
   module NestedSetClassMethods
     
+    def find_last_root
+      find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
+    end
+    
     def find_descendants(node)
       transaction do
         node.reload
-        self.find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", node.left, node.right])
+        find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", node.left, node.right])
       end
     end
     
     def nested_set(parent=nil)
       if parent
-        sort_nodes_to_nested_set(self.find_descendants(parent))
+        sort_nodes_to_nested_set(find_descendants(parent))
       else
-        sort_nodes_to_nested_set(self.find(:all, :order => '`left` ASC'))
+        sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
       end
     end
     
