@@ -1,7 +1,3 @@
-path = File.join(File.dirname(__FILE__), 'even_better_nested_set/')
-
-require path + 'child_association_proxy'
-
 module EvenBetterNestedSet
   
   def self.included(base)
@@ -145,7 +141,7 @@ module EvenBetterNestedSet
     end
     
     def find_boundaries(id)
-      connection.select_rows("SELECT left, right FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
+      connection.select_rows("SELECT `left`, `right` FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
     end
     
     def find_descendants(node)
