@@ -107,7 +107,9 @@ module EvenBetterNestedSet
         transaction do
           self.left, self.right = base_class.find_boundaries(self.id)
           
-          if @parent_id # moved to non-root
+          if @parent_id.blank? # moved to root
+            shift_difference = base_class.find_last_root.right - left + 1
+          else # moved to non-root
             new_parent = base_class.find_by_id(@parent_id)
 
             # open up a space
@@ -117,8 +119,6 @@ module EvenBetterNestedSet
             self.left, self.right = base_class.find_boundaries(self.id)
             
             shift_difference = (new_parent.right - left)
-          else # moved to root
-            shift_difference = base_class.find_last_root.right - left + 1
           end
           # move itself and children into place
           shift! shift_difference, left, right

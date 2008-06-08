@@ -126,6 +126,18 @@ describe "all nested set models", :shared => true do
       @r1c2s1.bounds.should == (16..17)
     end
     
+    it "should maintain the integrity of the tree if a node is moved to a root position by assigning a blank string (mass assignment)" do
+      @r1c2.parent_id = ""
+      @r1c2.save!
+      
+      reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
+      
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
+      @r1c2.bounds.should == (15..24)
+      @r1c2s1.bounds.should == (16..17)
+    end
+    
     it "should maintain the integrity of the tree if a root is to a non-root position" do
       @r1c2.reload
       @r2.parent_id = @r1c2.id
