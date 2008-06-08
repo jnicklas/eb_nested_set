@@ -97,7 +97,7 @@ module EvenBetterNestedSet
     def cache_children(*cached_children) #:nodoc:
       @cached_children ||= []
       @cached_children.push(*cached_children)
-      self.children.target = @cached_children
+      children.target = @cached_children
     end
     
     protected
