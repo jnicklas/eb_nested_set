@@ -11,29 +11,6 @@ module EvenBetterNestedSet
   
   module NestedSetMethods
     
-    def parent_id=(new_parent_id)
-      unless new_parent_id == parent_id
-        @moved = true
-        @parent_id = new_parent_id
-        write_attribute(:parent_id, new_parent_id)
-      end
-    end
-    
-    def parent=(new_parent)
-      self.parent_id = new_parent ? new_parent.id : nil
-    end
-    
-    def parent(force_reload=false)
-      @parent = nil if force_reload
-      @parent ||= base_class.find_by_id(parent_id)
-    end
-    
-    def children
-      return @children if @children
-      @descendants, @children = fetch_descendants
-      @children
-    end
-    
     def patriarch
       transaction do
         self.left, self.right = base_class.find_boundaries(self.id)
@@ -103,14 +80,14 @@ module EvenBetterNestedSet
     end
     
     def move_node
-      if @moved
+      if parent_id_changed?
         transaction do
           self.left, self.right = base_class.find_boundaries(self.id)
           
-          if @parent_id.blank? # moved to root
+          if parent_id.blank? # moved to root
             shift_difference = base_class.find_last_root.right - left + 1
           else # moved to non-root
-            new_parent = base_class.find_by_id(@parent_id)
+            new_parent = base_class.find_by_id(parent_id)
 
             # open up a space
             boundary = new_parent.right
@@ -207,15 +184,20 @@ module EvenBetterNestedSet
   module ClassMethods
     
     def acts_as_nested_set
+
+      named_scope :roots, :conditions => { :parent_id => nil}
+      has_many :children, :class_name => self.name, :foreign_key => :parent_id
+      belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
+
       include NestedSetMethods
       extend NestedSetClassMethods
-      named_scope :roots, :conditions => { :parent_id => nil}
       
       before_create :append_node
       before_update :move_node
       before_destroy :reload
       after_destroy :remove_node
       validate_on_update :illegal_nesting
+      
       #attr_protected :left, :right
     end
     

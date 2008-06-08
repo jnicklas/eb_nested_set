@@ -291,6 +291,25 @@ describe "all nested set models", :shared => true do
         @r1c2s2.children.should == [@r1c2s2m1]
       end
       
+      it "should allow creation of children" do
+        child = @r1c2.children.create!(valid_attributes)
+
+        child.parent_id.should == @r1c2.id
+        child.bounds.should == (15..16)
+      end
+      
+      it "should allow addition of children" do
+        @r2.children << @r1c2
+
+        reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
+
+        @r1.bounds.should == (1..8)
+        @r1c3.bounds.should == (6..7)
+        @r2.bounds.should == (9..22)
+        @r1c2.bounds.should == (12..21)
+        @r1c2s1.bounds.should == (13..14)
+      end
+      
     end
     
     describe "#patriarch" do
