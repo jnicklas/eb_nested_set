@@ -326,6 +326,17 @@ describe "all nested set models", :shared => true do
       end
       
     end
+    
+    describe "#root" do
+      
+      it "should find the root node that this node descended from" do
+        @r1c1.root.should == @r1
+        @r1c2s2.root.should == @r1
+        @r1c2s2m1.root.should == @r1
+        @r2c1.root.should == @r2
+      end
+      
+    end
 
     describe "#generation" do
       

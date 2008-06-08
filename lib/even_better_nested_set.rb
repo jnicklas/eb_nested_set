@@ -59,12 +59,14 @@ module EvenBetterNestedSet
 
     end
     
-    def patriarch
+    def root
       transaction do
         reload_boundaries
         @patriarch ||= base_class.roots.find(:first, :conditions => ["`left` < ? AND `right` > ?", left, right])
       end
     end
+    
+    alias_method :patriarch, :root
     
     def descendants
       return @descendants if @descendants
