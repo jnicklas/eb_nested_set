@@ -28,7 +28,7 @@ def show_model_variables_for(context, model)
   end
 end
 
-#ActiveRecord::Base.logger = Logger.new(STDOUT)
+ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 
 class TestMigration < ActiveRecord::Migration

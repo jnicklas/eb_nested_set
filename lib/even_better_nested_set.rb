@@ -1,7 +1,3 @@
-path = File.join(File.dirname(__FILE__), 'even_better_nested_set/')
-
-require path + 'child_association_proxy'
-
 module EvenBetterNestedSet
   
   def self.included(base)
