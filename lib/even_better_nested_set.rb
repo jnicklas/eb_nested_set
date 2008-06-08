@@ -9,7 +9,7 @@ module EvenBetterNestedSet
     
     def patriarch
       transaction do
-        self.left, self.right = base_class.find_boundaries(self.id)
+        reload_boundaries
         @patriarch ||= base_class.roots.find(:first, :conditions => ["`left` < ? AND `right` > ?", left, right])
       end
     end
@@ -78,7 +78,7 @@ module EvenBetterNestedSet
     def move_node
       if parent_id_changed?
         transaction do
-          self.left, self.right = base_class.find_boundaries(self.id)
+          reload_boundaries
           
           if parent_id.blank? # moved to root
             shift_difference = base_class.find_last_root.right - left + 1
@@ -89,7 +89,7 @@ module EvenBetterNestedSet
             boundary = new_parent.right
             shift! node_width, boundary
             
-            self.left, self.right = base_class.find_boundaries(self.id)
+            reload_boundaries
             
             shift_difference = (new_parent.right - left)
           end
@@ -99,7 +99,7 @@ module EvenBetterNestedSet
           # close up the space that was left behind after move
           shift! -node_width, left
           
-          self.left, self.right = base_class.find_boundaries(self.id)
+          reload_boundaries
         end
       end
     end
@@ -123,6 +123,10 @@ module EvenBetterNestedSet
     
     def node_width
       right - left + 1
+    end
+        
+    def reload_boundaries
+      self.left, self.right = base_class.find_boundaries(id)
     end
     
     def base_class
