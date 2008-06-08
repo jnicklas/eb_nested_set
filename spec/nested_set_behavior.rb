@@ -62,57 +62,33 @@ describe "all nested set models", :shared => true do
       @r1.reload
       @r1c3.reload
       
-      @r1.left.should == 1
-      @r1.right.should == 8
-      @r1c3.left.should == 6
-      @r1c3.right.should == 7
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
     end
     
     it "should maintain the integrity of the tree if a node is moved" do
       @r1c2.parent = @r2
       @r1c2.save!
       
-      @r1.reload
-      @r1c3.reload
-      @r2.reload
-      @r1c2.reload
-      @r1c2s1.reload
+      reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
       
-      @r1.left.should == 1
-      @r1.right.should == 8
-      @r1c3.left.should == 6
-      @r1c3.right.should == 7
-      
-      @r2.left.should == 9
-      @r2.right.should == 22
-      
-      @r1c2.left.should == 12
-      @r1c2.right.should == 21
-      
-      @r1c2s1.left.should == 13
-      @r1c2s1.right.should == 14
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
+      @r2.bounds.should == (9..22)
+      @r1c2.bounds.should == (12..21)
+      @r1c2s1.bounds.should == (13..14)
     end
     
     it "should maintain the integrity of the tree if a node is moved to a root position" do
       @r1c2.parent = nil
       @r1c2.save!
       
-      @r1.reload
-      @r1c3.reload
-      @r2.reload
-      @r1c2.reload
-      @r1c2s1.reload
+      reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
       
-      @r1.left.should == 1
-      @r1.right.should == 8
-      @r1c3.left.should == 6
-      @r1c3.right.should == 7
-      
-      @r1c2.left.should == 15
-      @r1c2.right.should == 24
-      
-      @r1c2s1.left.should == 16
-      @r1c2s1.right.should == 17
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
+      @r1c2.bounds.should == (15..24)
+      @r1c2s1.bounds.should == (16..17)
     end
     
     it "should maintain the integrity of the tree if a root is to a non-root position" do
@@ -120,27 +96,14 @@ describe "all nested set models", :shared => true do
       @r2.parent = @r1c2
       @r2.save!
       
-      @r1.reload
-      @r2.reload
-      @r2c1.reload
-      @r1c3.reload
-      @r3.reload
-      @r1c2.reload
+      reload_models(@r1, @r2, @r2c1, @r1c3, @r3, @r1c2)
       
-      @r1c2.right.should == 19      
-      @r1.right.should == 22
-
-      @r1c3.left.should == 20
-      @r1c3.right.should == 21
-      
-      @r3.left.should == 23
-      @r3.right.should == 24
-      
-      @r2.left.should == 15
-      @r2.right.should == 18
-      
-      @r2c1.left.should == 16
-      @r2c1.right.should == 17
+      @r1.bounds.should == (1..22)
+      @r1c2.bounds.should == (6..19)
+      @r1c3.bounds.should == (20..21)
+      @r3.bounds.should == (23..24)
+      @r2.bounds.should == (15..18)
+      @r2c1.bounds.should == (16..17)
     end
     
     it "should be invalid if parent is a descendant" do
@@ -311,8 +274,8 @@ describe "all nested set models", :shared => true do
       without_changing_the_database do
         @instance = @model.create!(valid_attributes)
         @instance.parent_id.should be_nil
-        @instance.left.should == 1
-        @instance.right.should == 2
+        
+        @instance.bounds.should == (1..2)
       end
     end
   
@@ -322,17 +285,16 @@ describe "all nested set models", :shared => true do
         @model.create!(valid_attributes)
         @instance = @model.create!(valid_attributes)
         @instance.reload
+
         @instance.parent_id.should be_nil
-        @instance.left.should == 5
-        @instance.right.should == 6
+        @instance.bounds.should == (5..6)
       end
     end
   
     it "should append a child node to a parent" do
       without_changing_the_database do
         @parent = @model.create!(valid_attributes)
-        @parent.left.should == 1
-        @parent.right.should == 2
+        @parent.bounds.should == (1..2)
       
         @instance = @model.create!(valid_attributes(:parent => @parent))
         
@@ -340,27 +302,22 @@ describe "all nested set models", :shared => true do
         
         @instance.parent.should == @parent
 
-        @instance.left.should == 2
-        @instance.right.should == 3
-
-        @parent.left.should == 1
-        @parent.right.should == 4
+        @instance.bounds.should == (2..3)
+        @parent.bounds.should == (1..4)
       end
     end
     
     it "should rollback changes if the save is not successfull for some reason" do
       without_changing_the_database do
         @parent = @model.create!(valid_attributes)
-        @parent.left.should == 1
-        @parent.right.should == 2
+        @parent.bounds.should == (1..2)
       
         @instance = @model.create(invalid_attributes(:parent => @parent))
         @instance.should be_a_new_record
         
         @parent.reload
 
-        @parent.left.should == 1
-        @parent.right.should == 2
+        @parent.bounds.should == (1..2)
       end
     end
     
@@ -369,89 +326,49 @@ describe "all nested set models", :shared => true do
         @root1 = @model.create!(valid_attributes)
         @root2 = @model.create!(valid_attributes)
         
-        @root1.left.should == 1
-        @root1.right.should == 2
-        @root2.left.should == 3
-        @root2.right.should == 4
+        @root1.bounds.should == (1..2)
+        @root2.bounds.should == (3..4)
         
         @child1 = @model.create!(valid_attributes(:parent => @root1))
+        reload_models(@root1, @root2)
         
-        @root1.reload
-        @root2.reload
-        
-        @root1.left.should == 1
-        @root1.right.should == 4
-        @root2.left.should == 5
-        @root2.right.should == 6
-        
-        @child1.left.should == 2
-        @child1.right.should == 3
+        @root1.bounds.should == (1..4)
+        @root2.bounds.should == (5..6)
+        @child1.bounds.should == (2..3)
         
         @child2 = @model.create!(valid_attributes(:parent => @root1))
+        reload_models(@root1, @root2, @child1)
         
-        @root1.reload
-        @root2.reload
-        @child1.reload
-        
-        @root1.left.should == 1
-        @root1.right.should == 6
-        @root2.left.should == 7
-        @root2.right.should == 8
-        
-        @child1.left.should == 2
-        @child1.right.should == 3
-        
-        @child2.left.should == 4
-        @child2.right.should == 5
+        @root1.bounds.should == (1..6)
+        @root2.bounds.should == (7..8)
+        @child1.bounds.should == (2..3)
+        @child2.bounds.should == (4..5)
         
         @subchild1 = @model.create!(valid_attributes(:parent => @child2))
+        reload_models(@root1, @root2, @child1, @child2)
         
-        @root1.reload
-        @root2.reload
-        @child1.reload
-        @child2.reload
-        
-        @root1.left.should == 1
-        @root1.right.should == 8
-        @root2.left.should == 9
-        @root2.right.should == 10
-        
-        @child1.left.should == 2
-        @child1.right.should == 3
-        
-        @child2.left.should == 4
-        @child2.right.should == 7
-        
-        @subchild1.left.should == 5
-        @subchild1.right.should == 6
+        @root1.bounds.should == (1..8)
+        @root2.bounds.should == (9..10)
+        @child1.bounds.should == (2..3)
+        @child2.bounds.should == (4..7)
+        @subchild1.bounds.should == (5..6)
         
         @subchild2 = @model.create!(valid_attributes(:parent => @child1))
+        reload_models(@root1, @root2, @child1, @child2, @subchild1)
         
-        @root1.reload
-        @root2.reload
-        @child1.reload
-        @child2.reload
-        @subchild1.reload
-        
-        @root1.left.should == 1
-        @root1.right.should == 10
-        @root2.left.should == 11
-        @root2.right.should == 12
-        
-        @child1.left.should == 2
-        @child1.right.should == 5
-        
-        @child2.left.should == 6
-        @child2.right.should == 9
-
-        @subchild1.left.should == 7
-        @subchild1.right.should == 8
-        
-        @subchild2.left.should == 3
-        @subchild2.right.should == 4
+        @root1.bounds.should == (1..10)
+        @root2.bounds.should == (11..12)
+        @child1.bounds.should == (2..5)
+        @child2.bounds.should == (6..9)
+        @subchild1.bounds.should == (7..8)
+        @subchild2.bounds.should == (3..4)
       end
     end
   
+  end
+  
+  def reload_models(*attrs)
+    attrs.each {|m| m.reload }
   end
 
 end
