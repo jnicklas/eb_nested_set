@@ -164,8 +164,7 @@ module EvenBetterNestedSet
     end
     
     def find_boundaries(id)
-      node = base_class.find_by_id(id)
-      [node.left, node.right]
+      connection.select_rows("SELECT left, right FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
     end
     
     def find_descendants(node)
