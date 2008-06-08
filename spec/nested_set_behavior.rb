@@ -216,6 +216,8 @@ describe "all nested set models", :shared => true do
         roots[1].should == @r2
         roots[1].children[0].should == @r2c1
         roots[2].should == @r3
+        
+        roots[1].children[0].parent.should == @r2
       end
       
       it "should find nodes for a specific parent as a nested set" do
@@ -274,6 +276,8 @@ describe "all nested set models", :shared => true do
         roots[1].should == @r1c2s2
         roots[1].children[0].should == @r1c2s2m1
         roots[2].should == @r1c2s3
+        
+        roots[1].children[0].parent.should == @r1c2s2
       end
       
     end

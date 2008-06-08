@@ -93,13 +93,12 @@ module EvenBetterNestedSet
     end
     
     def cache_parent(parent) #:nodoc:
-      @parent = parent
+      self.parent = parent
     end
     
-    def cache_children(*cached_children) #:nodoc:
+    def cache_children(*nodes) #:nodoc:
       @cached_children ||= []
-      @cached_children.push(*cached_children)
-      children.target = @cached_children
+      children.target = @cached_children.push(*nodes)
     end
     
     protected
