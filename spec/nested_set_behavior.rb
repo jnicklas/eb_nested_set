@@ -199,9 +199,11 @@ describe "all nested set models", :shared => true do
     end
     
     describe ".nested_set" do
-      it "should find all nodes as a nested set" do
-        roots = @model.nested_set
-        
+      it "should find all nodes as a nested set and cache that data" do
+        @model.nested_set
+      
+        @model.delete_all
+      
         roots[0].should == @r1
         roots[0].children[0].should == @r1c1
         roots[0].children[0].children[0].should == @r1c1s1
