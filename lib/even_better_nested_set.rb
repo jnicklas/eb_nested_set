@@ -69,6 +69,12 @@ module EvenBetterNestedSet
     
     protected
     
+    def illegal_nesting
+      if parent and descendants.include?(parent)
+        errors.add(:parent_id, 'cannot move node to its own descendant')
+      end
+    end
+    
     def remove_node
       base_class.delete_all ['`left` > ? AND `right` < ?', left, right] # TODO: Figure out what to do with children's destroy callbacks
       
@@ -207,6 +213,7 @@ module EvenBetterNestedSet
       before_update :move_node
       before_destroy :reload # make sure we are working with the latest version of the node
       after_destroy :remove_node
+      validate_on_update :illegal_nesting
       #attr_protected :left, :right
     end
     

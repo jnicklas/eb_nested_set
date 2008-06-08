@@ -143,6 +143,11 @@ describe "all nested set models", :shared => true do
       @r2c1.right.should == 17
     end
     
+    it "should be invalid if parent is a descendant" do
+      @r2.parent = @r2c1
+      @r2.should_not be_valid
+    end
+    
     describe ".nested_set" do
       it "should find all nodes as a nested set" do
         roots = @model.nested_set
