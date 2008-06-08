@@ -5,7 +5,59 @@ module EvenBetterNestedSet
     base.extend ClassMethods
   end
   
-  module NestedSetMethods
+  module NestedSet
+    
+    def self.included(base)
+      super
+      base.extend ClassMethods
+    end
+    
+    module ClassMethods
+
+      def find_last_root
+        find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
+      end
+
+      def find_boundaries(id)
+        connection.select_rows("SELECT `left`, `right` FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
+      end
+
+      def find_descendants(node)
+        transaction do
+          left, right = base_class.find_boundaries(node.id)
+          find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", left, right])
+        end
+      end
+
+      def nested_set(parent=nil)
+        if parent
+          sort_nodes_to_nested_set(find_descendants(parent))
+        else
+          sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
+        end
+      end
+
+      def sort_nodes_to_nested_set(nodes)
+        roots = []
+        hashmap = {}
+        for node in nodes
+          # if the parent is not in the hashmap, parent will be nil, therefore node will be a root node
+          # in that case
+          parent = node.parent_id ? hashmap[node.parent_id] : nil
+
+          if parent
+            node.cache_parent(parent)
+            parent.cache_children(node)
+          else
+            roots << node
+          end
+
+          hashmap[node.id] = node
+        end
+        return roots
+      end
+
+    end
     
     def patriarch
       transaction do
@@ -137,53 +189,6 @@ module EvenBetterNestedSet
     end
   end
   
-  module NestedSetClassMethods
-    
-    def find_last_root
-      find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
-    end
-    
-    def find_boundaries(id)
-      connection.select_rows("SELECT `left`, `right` FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
-    end
-    
-    def find_descendants(node)
-      transaction do
-        left, right = base_class.find_boundaries(node.id)
-        find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", left, right])
-      end
-    end
-    
-    def nested_set(parent=nil)
-      if parent
-        sort_nodes_to_nested_set(find_descendants(parent))
-      else
-        sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
-      end
-    end
-    
-    def sort_nodes_to_nested_set(nodes)
-      roots = []
-      hashmap = {}
-      for node in nodes
-        # if the parent is not in the hashmap, parent will be nil, therefore node will be a root node
-        # in that case
-        parent = node.parent_id ? hashmap[node.parent_id] : nil
-
-        if parent
-          node.cache_parent(parent)
-          parent.cache_children(node)
-        else
-          roots << node
-        end
-        
-        hashmap[node.id] = node
-      end
-      return roots
-    end
-    
-  end
-  
   module ClassMethods
     
     def acts_as_nested_set
@@ -192,8 +197,7 @@ module EvenBetterNestedSet
       has_many :children, :class_name => self.name, :foreign_key => :parent_id
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
 
-      include NestedSetMethods
-      extend NestedSetClassMethods
+      include NestedSet
       
       before_create :append_node
       before_update :move_node
