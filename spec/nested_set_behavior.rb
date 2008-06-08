@@ -67,7 +67,7 @@ describe "all nested set models", :shared => true do
     end
     
     it "should maintain the integrity of the tree if a node is moved" do
-      @r1c2.parent = @r2
+      @r1c2.parent_id = @r2.id
       @r1c2.save!
       
       reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
@@ -80,7 +80,7 @@ describe "all nested set models", :shared => true do
     end
     
     it "should maintain the integrity of the tree if a node is moved to a root position" do
-      @r1c2.parent = nil
+      @r1c2.parent_id = nil
       @r1c2.save!
       
       reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
@@ -92,6 +92,46 @@ describe "all nested set models", :shared => true do
     end
     
     it "should maintain the integrity of the tree if a root is to a non-root position" do
+      @r1c2.reload
+      @r2.parent_id = @r1c2.id
+      @r2.save!
+      
+      reload_models(@r1, @r2, @r2c1, @r1c3, @r3, @r1c2)
+      
+      @r1.bounds.should == (1..22)
+      @r1c2.bounds.should == (6..19)
+      @r1c3.bounds.should == (20..21)
+      @r3.bounds.should == (23..24)
+      @r2.bounds.should == (15..18)
+      @r2c1.bounds.should == (16..17)
+    end
+    
+    it "should maintain the integrity of the tree if a node is moved through the parent association" do
+      @r1c2.parent = @r2
+      @r1c2.save!
+      
+      reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
+      
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
+      @r2.bounds.should == (9..22)
+      @r1c2.bounds.should == (12..21)
+      @r1c2s1.bounds.should == (13..14)
+    end
+    
+    it "should maintain the integrity of the tree if a node is moved to a root position through the parent association" do
+      @r1c2.parent = nil
+      @r1c2.save!
+      
+      reload_models(@r1, @r1c3, @r2, @r1c2, @r1c2s1)
+      
+      @r1.bounds.should == (1..8)
+      @r1c3.bounds.should == (6..7)
+      @r1c2.bounds.should == (15..24)
+      @r1c2s1.bounds.should == (16..17)
+    end
+    
+    it "should maintain the integrity of the tree if a root is to a non-root position through the parent association" do
       @r1c2.reload
       @r2.parent = @r1c2
       @r2.save!

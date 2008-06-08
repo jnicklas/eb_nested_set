@@ -11,15 +11,21 @@ module EvenBetterNestedSet
   
   module NestedSetMethods
     
-    def parent=(new_parent)
-      return if new_parent == parent
-      @moved = true
-      @parent = new_parent
-      self.parent_id = new_parent ? parent.id : nil
+    def parent_id=(new_parent_id)
+      unless new_parent_id == parent_id
+        @moved = true
+        @parent = nil
+        write_attribute(:parent_id, new_parent_id)
+      end
     end
     
-    def parent(reload=false)
-      @parent = nil if reload
+    def parent=(new_parent)
+      self.parent_id = new_parent ? new_parent.id : nil
+      @parent = new_parent
+    end
+    
+    def parent(force_reload=false)
+      @parent = nil if force_reload
       @parent ||= base_class.find_by_id(parent_id)
     end
     
@@ -32,7 +38,7 @@ module EvenBetterNestedSet
     def patriarch
       transaction do
         reload
-        @patriarch ||= base_class.find(:first, :conditions => ["`left` < ? AND `right` > ? AND parent_id IS NULL", left, right])
+        @patriarch ||= base_class.roots.find(:first, :conditions => ["`left` < ? AND `right` > ?", left, right])
       end
     end
     
@@ -84,7 +90,7 @@ module EvenBetterNestedSet
     def append_node
       boundary = 1
       
-      if parent
+      if parent_id?
         transaction do
           boundary = parent(true).right
           shift_right! 2, boundary
@@ -144,7 +150,6 @@ module EvenBetterNestedSet
     
     def fetch_descendants
       transaction do
-        reload
         ds = base_class.find_descendants(self)
         [ds, base_class.sort_nodes_to_nested_set(ds)]
       end
