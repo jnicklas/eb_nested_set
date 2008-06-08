@@ -36,7 +36,7 @@ module EvenBetterNestedSet
     
     def patriarch
       transaction do
-        reload
+        self.left, self.right = base_class.find_boundaries(self.id)
         @patriarch ||= base_class.roots.find(:first, :conditions => ["`left` < ? AND `right` > ?", left, right])
       end
     end
@@ -83,7 +83,7 @@ module EvenBetterNestedSet
     def remove_node
       base_class.delete_all ['`left` > ? AND `right` < ?', left, right] # TODO: Figure out what to do with children's destroy callbacks
       
-      shift! -node_width, right
+      shift!(-node_width, right)
     end
     
     def append_node
@@ -114,18 +114,19 @@ module EvenBetterNestedSet
             boundary = new_parent.right
             shift! node_width, boundary
             
-            reload
+            self.left, self.right = base_class.find_boundaries(self.id)
             
-            shift_difference = new_parent.right - self.left
+            shift_difference = (new_parent.right - left)
           else # moved to root
             shift_difference = base_class.find_last_root.right - left + 1
           end
-          
           # move itself and children into place
-          shift! shift_difference, left, right # shifts left if shift_diff is negative
+          shift! shift_difference, left, right
           
           # close up the space that was left behind after move
           shift! -node_width, left
+          
+          self.left, self.right = base_class.find_boundaries(self.id)
         end
       end
     end
@@ -169,8 +170,8 @@ module EvenBetterNestedSet
     
     def find_descendants(node)
       transaction do
-        node.reload
-        find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", node.left, node.right])
+        left, right = base_class.find_boundaries(node.id)
+        find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", left, right])
       end
     end
     
@@ -213,7 +214,7 @@ module EvenBetterNestedSet
       
       before_create :append_node
       before_update :move_node
-      before_destroy :reload # make sure we are working with the latest version of the node
+      before_destroy :reload
       after_destroy :remove_node
       validate_on_update :illegal_nesting
       #attr_protected :left, :right
