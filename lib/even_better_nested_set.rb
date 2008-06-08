@@ -14,14 +14,13 @@ module EvenBetterNestedSet
     def parent_id=(new_parent_id)
       unless new_parent_id == parent_id
         @moved = true
-        @parent = nil
+        @parent_id = new_parent_id
         write_attribute(:parent_id, new_parent_id)
       end
     end
     
     def parent=(new_parent)
       self.parent_id = new_parent ? new_parent.id : nil
-      @parent = new_parent
     end
     
     def parent(force_reload=false)
@@ -84,7 +83,7 @@ module EvenBetterNestedSet
     def remove_node
       base_class.delete_all ['`left` > ? AND `right` < ?', left, right] # TODO: Figure out what to do with children's destroy callbacks
       
-      shift_left! node_width, right
+      shift! -node_width, right
     end
     
     def append_node
@@ -93,7 +92,7 @@ module EvenBetterNestedSet
       if parent_id?
         transaction do
           boundary = parent(true).right
-          shift_right! 2, boundary
+          shift! 2, boundary
         end      
       elsif last_root = base_class.find_last_root
         boundary = last_root.right + 1
@@ -106,45 +105,38 @@ module EvenBetterNestedSet
     def move_node
       if @moved
         transaction do
-          reload
+          self.left, self.right = base_class.find_boundaries(self.id)
           
-          if @parent # moved to non-root
-            @parent.reload
+          if @parent_id # moved to non-root
+            new_parent = base_class.find_by_id(@parent_id)
 
             # open up a space
-            boundary = @parent.right
-            shift_right! node_width, boundary
+            boundary = new_parent.right
+            shift! node_width, boundary
+            
             reload
-          
-            shift_difference = @parent.right - self.left
+            
+            shift_difference = new_parent.right - self.left
           else # moved to root
             shift_difference = base_class.find_last_root.right - left + 1
           end
           
           # move itself and children into place
-          shift_right! shift_difference, left, right # shifts left if shift_diff is negative
+          shift! shift_difference, left, right # shifts left if shift_diff is negative
           
           # close up the space that was left behind after move
-          shift_left! node_width, left
+          shift! -node_width, left
         end
       end
     end
     
-    def shift_left!(positions, left_boundary, right_boundary=nil)
-      shift! '-', positions, left_boundary, right_boundary
-    end
-    
-    def shift_right!(positions, left_boundary, right_boundary=nil)
-      shift! '+', positions, left_boundary, right_boundary
-    end
-    
-    def shift!(direction, positions, left_boundary, right_boundary=nil)
+    def shift!(positions, left_boundary, right_boundary=nil)
       if right_boundary
-        base_class.update_all "`left`  = (`left`  #{direction} #{positions})", ["`left`  >= ? AND `left`  <= ?", left_boundary, right_boundary]
-        base_class.update_all "`right` = (`right` #{direction} #{positions})", ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary]
+        base_class.update_all "`left`  = (`left`  + #{positions})", ["`left`  >= ? AND `left`  <= ?", left_boundary, right_boundary]
+        base_class.update_all "`right` = (`right` + #{positions})", ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary]
       else
-        base_class.update_all "`left`  = (`left`  #{direction} #{positions})", ["`left` >= ?", left_boundary]
-        base_class.update_all "`right` = (`right` #{direction} #{positions})", ["`right` >= ?", left_boundary]
+        base_class.update_all "`left`  = (`left`  + #{positions})", ["`left` >= ?", left_boundary]
+        base_class.update_all "`right` = (`right` + #{positions})", ["`right` >= ?", left_boundary]
       end
     end
     
@@ -168,6 +160,11 @@ module EvenBetterNestedSet
     
     def find_last_root
       find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
+    end
+    
+    def find_boundaries(id)
+      node = base_class.find_by_id(id)
+      [node.left, node.right]
     end
     
     def find_descendants(node)

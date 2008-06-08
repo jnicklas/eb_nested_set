@@ -12,6 +12,30 @@ describe "all nested set models", :shared => true do
       #@instance.left.should be_nil
       #@instance.right.should be_nil
     end
+    
+    it "should change the parent_id in the database when a parent is assigned" do
+      without_changing_the_database do
+        @parent = @model.create!(valid_attributes)
+        
+        @instance.parent = @parent
+        @instance.save!
+        @instance = @model.find(@instance.id)
+        
+        @instance.parent_id.should == @parent.id
+      end
+    end
+    
+    it "should change the parent_id in the database when a parent_id is assigned" do
+      without_changing_the_database do
+        @parent = @model.create!(valid_attributes)
+        
+        @instance.parent_id = @parent.id
+        @instance.save!
+        @instance = @model.find(@instance.id)
+        
+        @instance.parent_id.should == @parent.id
+      end
+    end
   
     describe '#bounds' do
     
@@ -77,6 +101,17 @@ describe "all nested set models", :shared => true do
       @r2.bounds.should == (9..22)
       @r1c2.bounds.should == (12..21)
       @r1c2s1.bounds.should == (13..14)
+    end
+    
+    it "should change the parent, left and right in the database when a node is moved" do
+      
+      @r1c2.parent_id = @r2.id
+      
+      @r1c2.save!
+      @r1c2 = @model.find(@r1c2.id)
+
+      @r1c2.bounds.should == (12..21)
+      @r1c2.parent_id.should == @r2.id
     end
     
     it "should maintain the integrity of the tree if a node is moved to a root position" do
