@@ -200,7 +200,7 @@ describe "all nested set models", :shared => true do
     
     describe ".nested_set" do
       it "should find all nodes as a nested set and cache that data" do
-        @model.nested_set
+        roots = @model.nested_set
       
         @model.delete_all
       
@@ -265,8 +265,10 @@ describe "all nested set models", :shared => true do
     
     describe "#nested_set" do
       
-      it "should find descendant nodes for this node as a nested set" do
+      it "should find descendant nodes for this node as a nested set without hitting the database" do
         roots = @r1c2.nested_set
+        
+        @model.delete_all
         
         roots[0].should == @r1c2s1
         roots[1].should == @r1c2s2

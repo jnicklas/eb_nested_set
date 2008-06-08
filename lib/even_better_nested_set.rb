@@ -16,12 +16,14 @@ module EvenBetterNestedSet
     
     def descendants
       return @descendants if @descendants
-      @descendants, @children = fetch_descendants
+      @descendants, @cached_children = fetch_descendants
+      cache_children
+      
       @descendants
     end
     
     def nested_set
-      children
+      base_class.nested_set(self)
     end
     
     def generation
@@ -40,9 +42,10 @@ module EvenBetterNestedSet
       @parent = parent
     end
     
-    def cache_child(child) #:nodoc:
-      @children ||= []
-      @children << child
+    def cache_children(*cached_children) #:nodoc:
+      @cached_children ||= []
+      @cached_children.push(*cached_children)
+      self.children.target = @cached_children
     end
     
     protected
@@ -169,7 +172,7 @@ module EvenBetterNestedSet
 
         if parent
           node.cache_parent(parent)
-          parent.cache_child(node)
+          parent.cache_children(node)
         else
           roots << node
         end
