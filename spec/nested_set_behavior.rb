@@ -393,6 +393,15 @@ describe "all nested set models", :shared => true do
       end
     end
     
+    describe "#level" do
+      it "should give the depth from the node to its root" do
+        @r1.level.should == 0
+        @r1c2.level.should == 1
+        @r1c2s2.level.should == 2
+        @r1c2s2m1.level.should == 3
+      end
+    end
+    
     describe "#kin" do
       it "should find the patriarch and all its descendents" do
         @r1c2s2.kin.should == [@r1, @r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]

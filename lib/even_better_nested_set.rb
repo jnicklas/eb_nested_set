@@ -110,6 +110,16 @@ module EvenBetterNestedSet
       generation - [self]
     end
     
+    def level
+      if root?
+        0
+      elsif @ancestors
+        @ancestors.size
+      else
+        base_class.count :conditions => ["left < ? AND right > ?", left, right]
+      end
+    end
+    
     def bounds
       left..right
     end
