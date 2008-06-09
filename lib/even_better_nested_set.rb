@@ -5,6 +5,9 @@ module EvenBetterNestedSet
     base.extend ClassMethods
   end
   
+  class NestedSetError < StandardError; end
+  class IllegalAssignmentError < NestedSetError; end
+  
   module NestedSet
     
     def self.included(base)
@@ -89,7 +92,7 @@ module EvenBetterNestedSet
       descendants.unshift(self)
     end
     
-    def family_ids (force_reload=false)
+    def family_ids(force_reload=false)
       return @family_ids unless @family_ids.nil? or force_reload
       
       transaction do
@@ -119,6 +122,14 @@ module EvenBetterNestedSet
       @cached_children ||= []
       children.target = @cached_children.push(*nodes)
     end
+
+    def left=(left)
+      raise EvenBetterNestedSet::IllegalAssignmentError, "left is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+    end
+    
+    def right=(right)
+      raise EvenBetterNestedSet::IllegalAssignmentError, "right is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+    end
     
     protected
     
@@ -146,8 +157,7 @@ module EvenBetterNestedSet
         boundary = last_root.right + 1
       end
       
-      self.left  = boundary
-      self.right = left + 1
+      set_boundaries(boundary, boundary + 1)
     end
     
     def move_node
@@ -192,9 +202,14 @@ module EvenBetterNestedSet
     def node_width
       right - left + 1
     end
+    
+    def set_boundaries(left, right)
+      write_attribute(:left, left)
+      write_attribute(:right, right)
+    end
         
     def reload_boundaries
-      self.left, self.right = base_class.find_boundaries(id)
+      set_boundaries(*base_class.find_boundaries(id))
     end
     
     def base_class
@@ -217,8 +232,6 @@ module EvenBetterNestedSet
       before_destroy :reload
       after_destroy :remove_node
       validate_on_update :illegal_nesting
-      
-      #attr_protected :left, :right
     end
     
   end
