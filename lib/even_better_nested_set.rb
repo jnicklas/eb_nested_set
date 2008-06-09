@@ -55,6 +55,10 @@ module EvenBetterNestedSet
 
     end
     
+    def root?
+      not parent_id?
+    end
+    
     def root
       transaction do
         reload_boundaries
@@ -63,6 +67,11 @@ module EvenBetterNestedSet
     end
     
     alias_method :patriarch, :root
+    
+    def ancestors(force_reload=false)
+      @ancestors = nil if force_reload
+      @ancestors ||= base_class.find :all, :conditions => ["left < ? AND right > ?", left, right], :order => 'left DESC'
+    end
     
     def descendants
       base_class.find_descendants(self)
@@ -76,7 +85,7 @@ module EvenBetterNestedSet
       descendants.unshift(self)
     end
     
-    def family_ids (force_reload=true)
+    def family_ids (force_reload=false)
       return @family_ids unless @family_ids.nil? or force_reload
       
       transaction do
@@ -87,7 +96,7 @@ module EvenBetterNestedSet
     end
     
     def generation
-      parent ? parent.children : base_class.roots
+      root? ? base_class.roots : parent.children
     end
     
     def siblings

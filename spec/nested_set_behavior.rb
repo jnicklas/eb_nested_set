@@ -366,9 +366,9 @@ describe "all nested set models", :shared => true do
     end
     
     describe "#ancestors" do
-      
-      it "should be blank"
-      
+      it "should return a node's parent and its parent's parents" do
+        @r1c2s2m1.ancestors.should == [@r1c2s2, @r1c2, @r1]
+      end
     end
     
     describe "#kin" do
