@@ -62,6 +62,10 @@ module EvenBetterNestedSet
       not parent_id?
     end
     
+    def descendant_of?(node)
+      node.left < self.left && self.right < node.right
+    end
+  
     def root
       transaction do
         reload_boundaries
