@@ -198,6 +198,11 @@ describe "all nested set models", :shared => true do
       @r2.should_not be_valid
     end
     
+    it "should be invalid if parent is self" do
+      @r2.parent = @r2
+      @r2.should_not be_valid
+    end
+    
     describe ".nested_set" do
       it "should find all nodes as a nested set and cache that data" do
         roots = @model.nested_set
@@ -222,7 +227,6 @@ describe "all nested set models", :shared => true do
     end
     
     describe ".sort_nodes_to_nested_set" do
-      
       it "should accept a list of nodes and sort them to a nested set" do
         roots = @model.sort_nodes_to_nested_set(@model.find(:all))
         roots[0].should == @r1
@@ -238,11 +242,9 @@ describe "all nested set models", :shared => true do
         roots[1].children[0].should == @r2c1
         roots[2].should == @r3
       end
-      
     end
     
     describe ".find_descendants" do
-      
       it "should find all descendants for a specific node" do
         
         roots = @model.find_descendants(@r1c2)
@@ -253,11 +255,9 @@ describe "all nested set models", :shared => true do
         roots[3].should == @r1c2s3
         
       end
-      
     end
     
     describe "#cache_nested_set" do
-      
       it "should cache all descendant nodes so that calls to #children or #parent don't hit the database" do
         @r1c2.cache_nested_set
         
@@ -270,21 +270,17 @@ describe "all nested set models", :shared => true do
         
         @r1c2.children[1].children[0].parent.should == @r1c2s2
       end
-      
     end
     
     describe "#parent" do
-      
       it "should find the parent node" do
         @r1c1.parent.should == @r1
         @r1c2s2.parent.should == @r1c2
         @r1c2s2m1.parent.should == @r1c2s2
       end
-      
     end
     
     describe "#children" do
-      
       it "should find all nodes that are direct descendants of this one" do
         @r1.children.should == [@r1c1, @r1c2, @r1c3]
         @r1c2s2.children.should == [@r1c2s2m1]
@@ -308,11 +304,9 @@ describe "all nested set models", :shared => true do
         @r1c2.bounds.should == (12..21)
         @r1c2s1.bounds.should == (13..14)
       end
-      
     end
     
     describe "#patriarch" do
-      
       it "should find the root node that this node descended from" do
         @r1c1.patriarch.should == @r1
         @r1c2s2.patriarch.should == @r1
@@ -320,11 +314,9 @@ describe "all nested set models", :shared => true do
         @r2c1.patriarch.should == @r2
         @r1.patriarch.should == @r1
       end
-      
     end
     
     describe "#root" do
-      
       it "should find the root node that this node descended from" do
         @r1c1.root.should == @r1
         @r1c2s2.root.should == @r1
@@ -332,11 +324,9 @@ describe "all nested set models", :shared => true do
         @r2c1.root.should == @r2
         @r1.root.should == @r1
       end
-      
     end
 
     describe "#generation" do
-      
       it "should find all nodes in the same generation as this one for a root node" do
         @r1.generation.should == [@r1, @r2, @r3]
       end
@@ -344,11 +334,9 @@ describe "all nested set models", :shared => true do
       it "should find all nodes in the same generation as this one" do
         @r1c1.generation.should == [@r1c1, @r1c2, @r1c3]
       end
-      
     end
     
     describe "#siblings" do
-      
       it "should find all sibling nodes for a root node" do
         @r1.siblings.should == [@r2, @r3]
       end
@@ -356,22 +344,18 @@ describe "all nested set models", :shared => true do
       it "should find all sibling nodes for a child node" do
         @r1c1.siblings.should == [@r1c2, @r1c3]
       end
-      
     end
     
     describe "#descendants" do
-      
       it "should find all descendants of this node" do
         @r1.descendants.should == [@r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]
       end
     end
     
     describe "#family" do
-      
       it "should combine self and descendants" do
         @r1.family.should == [@r1, @r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]
       end
-      
     end
     
     describe "#family_ids" do

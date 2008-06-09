@@ -110,7 +110,7 @@ module EvenBetterNestedSet
     protected
     
     def illegal_nesting
-      if parent and descendants.include?(parent)
+      if parent_id? and family_ids.include?(parent_id)
         errors.add(:parent_id, 'cannot move node to its own descendant')
       end
     end
