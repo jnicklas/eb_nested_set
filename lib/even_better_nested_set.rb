@@ -133,11 +133,11 @@ module EvenBetterNestedSet
       children.target = @cached_children.push(*nodes)
     end
 
-    def left=(left)
+    def left=(left) #:nodoc:
       raise EvenBetterNestedSet::IllegalAssignmentError, "left is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
     end
     
-    def right=(right)
+    def right=(right) #:nodoc:
       raise EvenBetterNestedSet::IllegalAssignmentError, "right is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
     end
     
