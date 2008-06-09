@@ -62,30 +62,26 @@ module EvenBetterNestedSet
     def root
       transaction do
         reload_boundaries
-        @patriarch ||= base_class.roots.find(:first, :conditions => ["`left` < ? AND `right` > ?", left, right])
+        @root ||= base_class.roots.find(:first, :conditions => ["`left` <= ? AND `right` >= ?", left, right])
       end
     end
     
     alias_method :patriarch, :root
     
     def descendants
-      return @descendants if @descendants
-      @descendants, @cached_children = fetch_descendants
-      cache_children
-      
-      @descendants
+      base_class.find_descendants(self)
     end
     
     def nested_set
-      base_class.nested_set(self)
+      @cached_children || base_class.nested_set(self)
     end
     
     def generation
-      @generation ||= parent ? parent.nested_set : base_class.nested_set
+      parent ? parent.children : base_class.roots
     end
     
     def siblings
-      @siblings ||= (generation - [self])
+      generation - [self]
     end
     
     def bounds
@@ -167,13 +163,6 @@ module EvenBetterNestedSet
       else
         base_class.update_all "`left`  = (`left`  + #{positions})", ["`left` >= ?", left_boundary]
         base_class.update_all "`right` = (`right` + #{positions})", ["`right` >= ?", left_boundary]
-      end
-    end
-    
-    def fetch_descendants
-      transaction do
-        ds = base_class.find_descendants(self)
-        [ds, base_class.sort_nodes_to_nested_set(ds)]
       end
     end
     

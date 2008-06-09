@@ -327,6 +327,7 @@ describe "all nested set models", :shared => true do
         @r1c2s2.patriarch.should == @r1
         @r1c2s2m1.patriarch.should == @r1
         @r2c1.patriarch.should == @r2
+        @r1.patriarch.should == @r1
       end
       
     end
@@ -338,6 +339,7 @@ describe "all nested set models", :shared => true do
         @r1c2s2.root.should == @r1
         @r1c2s2m1.root.should == @r1
         @r2c1.root.should == @r2
+        @r1.root.should == @r1
       end
       
     end
