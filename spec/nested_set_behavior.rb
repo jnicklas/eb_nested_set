@@ -372,9 +372,9 @@ describe "all nested set models", :shared => true do
     end
     
     describe "#kin" do
-      
-      it "should find the patriarch and all its descendents"
-      
+      it "should find the patriarch and all its descendents" do
+        @r1c2s2.kin.should == [@r1, @r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]
+      end
     end
 
   end

@@ -73,6 +73,10 @@ module EvenBetterNestedSet
       @ancestors ||= base_class.find :all, :conditions => ["left < ? AND right > ?", left, right], :order => 'left DESC'
     end
     
+    def kin
+      patriarch.family
+    end
+    
     def descendants
       base_class.find_descendants(self)
     end
