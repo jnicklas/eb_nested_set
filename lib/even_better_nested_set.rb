@@ -89,7 +89,7 @@ module EvenBetterNestedSet
     end
     
     def family
-      descendants.unshift(self)
+      [self, *descendants]
     end
     
     def family_ids(force_reload=false)
@@ -231,7 +231,7 @@ module EvenBetterNestedSet
     
     def acts_as_nested_set
 
-      named_scope :roots, :conditions => { :parent_id => nil}
+      named_scope :roots, :conditions => { :parent_id => nil }
       has_many :children, :class_name => self.name, :foreign_key => :parent_id
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
 
