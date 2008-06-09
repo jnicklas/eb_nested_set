@@ -51,21 +51,21 @@ describe "all nested set models", :shared => true do
   
   describe @model, "with many descendants" do
     before do
-      @r1 = @model.create!(valid_attributes)
-      @r2 = @model.create!(valid_attributes)
-      @r3 = @model.create!(valid_attributes)
+      @r1 = @model.create!(valid_attributes(:name => 'r1'))
+      @r2 = @model.create!(valid_attributes(:name => 'r2'))
+      @r3 = @model.create!(valid_attributes(:name => 'r3'))
 
-      @r1c1 = @model.create!(valid_attributes(:parent => @r1))
-      @r1c2 = @model.create!(valid_attributes(:parent => @r1))
-      @r1c3 = @model.create!(valid_attributes(:parent => @r1))
-      @r2c1 = @model.create!(valid_attributes(:parent => @r2))
+      @r1c1 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c1'))
+      @r1c2 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c2'))
+      @r1c3 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c3'))
+      @r2c1 = @model.create!(valid_attributes(:parent => @r2, :name => 'r2c1'))
 
-      @r1c1s1 = @model.create!(valid_attributes(:parent => @r1c1))
-      @r1c2s1 = @model.create!(valid_attributes(:parent => @r1c2))
-      @r1c2s2 = @model.create!(valid_attributes(:parent => @r1c2))
-      @r1c2s3 = @model.create!(valid_attributes(:parent => @r1c2))
+      @r1c1s1 = @model.create!(valid_attributes(:parent => @r1c1, :name => 'r1c1s1'))
+      @r1c2s1 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s1'))
+      @r1c2s2 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s2'))
+      @r1c2s3 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s3'))
 
-      @r1c2s2m1 = @model.create!(valid_attributes(:parent => @r1c2s2))
+      @r1c2s2m1 = @model.create!(valid_attributes(:parent => @r1c2s2, :name => 'r1c2s2m1'))
     end
     
     after do
@@ -219,15 +219,6 @@ describe "all nested set models", :shared => true do
         
         roots[1].children[0].parent.should == @r2
       end
-      
-      it "should find nodes for a specific parent as a nested set" do
-        roots = @model.nested_set(@r1c2)
-        
-        roots[0].should == @r1c2s1
-        roots[1].should == @r1c2s2
-        roots[1].children[0].should == @r1c2s2m1
-        roots[2].should == @r1c2s3
-      end
     end
     
     describe ".sort_nodes_to_nested_set" do
@@ -265,28 +256,21 @@ describe "all nested set models", :shared => true do
       
     end
     
-    describe "#nested_set" do
+    describe "#cache_nested_set" do
       
-      it "should find descendant nodes for this node as a nested set without hitting the database" do
-        roots = @r1c2.nested_set
+      it "should cache all descendant nodes so that calls to #children or #parent don't hit the database" do
+        @r1c2.cache_nested_set
         
         @model.delete_all
         
-        roots[0].should == @r1c2s1
-        roots[1].should == @r1c2s2
-        roots[1].children[0].should == @r1c2s2m1
-        roots[2].should == @r1c2s3
+        @r1c2.children[0].should == @r1c2s1
+        @r1c2.children[1].should == @r1c2s2
+        @r1c2.children[1].children[0].should == @r1c2s2m1
+        @r1c2.children[2].should == @r1c2s3
         
-        roots[1].children[0].parent.should == @r1c2s2
+        @r1c2.children[1].children[0].parent.should == @r1c2s2
       end
       
-    end
-    
-    describe "#nested_set_ids" do
-      it "should find all ids of the node's nested set" do
-        @r1c1.nested_set_ids.should == [@r1c1.id, @r1c1s1.id]
-        @r1c2.nested_set_ids.should == [@r1c2.id, @r1c2s1.id, @r1c2s2.id, @r1c2s2m1.id, @r1c2s3.id]
-      end
     end
     
     describe "#parent" do
@@ -384,8 +368,17 @@ describe "all nested set models", :shared => true do
     
     describe "#family" do
       
-      it "should combine descendants, self and siblings"
+      it "should combine self and descendants" do
+        @r1.family.should == [@r1, @r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]
+      end
       
+    end
+    
+    describe "#family_ids" do
+      it "should find all ids of the node's nested set" do
+        @r1c1.family_ids.should == [@r1c1.id, @r1c1s1.id]
+        @r1c2.family_ids.should == [@r1c2.id, @r1c2s1.id, @r1c2s2.id, @r1c2s2m1.id, @r1c2s3.id]
+      end
     end
     
     describe "#ancestors" do

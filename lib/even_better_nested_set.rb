@@ -29,12 +29,8 @@ module EvenBetterNestedSet
         end
       end
 
-      def nested_set(parent=nil)
-        if parent
-          sort_nodes_to_nested_set(find_descendants(parent))
-        else
-          sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
-        end
+      def nested_set
+        sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
       end
 
       def sort_nodes_to_nested_set(nodes)
@@ -72,17 +68,21 @@ module EvenBetterNestedSet
       base_class.find_descendants(self)
     end
     
-    def nested_set
-      @cached_children || base_class.nested_set(self)
+    def cache_nested_set
+      @cached_children || base_class.sort_nodes_to_nested_set(family)
     end
     
-    def nested_set_ids (force_reload=true)
-      return @nested_set_ids unless @nested_set_ids.nil? or force_reload
+    def family
+      descendants.unshift(self)
+    end
+    
+    def family_ids (force_reload=true)
+      return @family_ids unless @family_ids.nil? or force_reload
       
       transaction do
         reload_boundaries
         query = "SELECT id FROM `#{base_class.table_name}` WHERE `left` >= #{left} AND `right` <= #{right} ORDER BY `left`"
-        @nested_set_ids = base_class.connection.select_values(query).map(&:to_i)
+        @family_ids = base_class.connection.select_values(query).map(&:to_i)
       end
     end
     
