@@ -76,6 +76,16 @@ module EvenBetterNestedSet
       @cached_children || base_class.nested_set(self)
     end
     
+    def nested_set_ids (force_reload=true)
+      return @nested_set_ids unless @nested_set_ids.nil? or force_reload
+      
+      transaction do
+        reload_boundaries
+        query = "SELECT id FROM `#{base_class.table_name}` WHERE `left` >= #{left} AND `right` <= #{right} ORDER BY `left`"
+        @nested_set_ids = base_class.connection.select_values(query).map(&:to_i)
+      end
+    end
+    
     def generation
       parent ? parent.children : base_class.roots
     end

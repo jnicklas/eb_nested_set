@@ -282,6 +282,13 @@ describe "all nested set models", :shared => true do
       
     end
     
+    describe "#nested_set_ids" do
+      it "should find all ids of the node's nested set" do
+        @r1c1.nested_set_ids.should == [@r1c1.id, @r1c1s1.id]
+        @r1c2.nested_set_ids.should == [@r1c2.id, @r1c2s1.id, @r1c2s2.id, @r1c2s2m1.id, @r1c2s3.id]
+      end
+    end
+    
     describe "#parent" do
       
       it "should find the parent node" do
