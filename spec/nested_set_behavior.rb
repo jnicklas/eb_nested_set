@@ -348,6 +348,24 @@ describe "all nested set models", :shared => true do
       end
     end
 
+    describe "#root?" do
+      it "should be true if node doesn't have a parent" do
+        @r1.should be_root
+        @model.roots.should include(@r1)
+        @r1.parent.should be_nil
+      end
+    end
+    
+    describe "#descendant_of(other_node)" do
+      it "should be true if other_node is an ancestor of node" do
+        reload_models @r1, @r1c2s2
+        
+        @r1c2s2.should be_descendant_of(@r1)
+        @r1c2s2.ancestors.should include(@r1)
+        @r1.descendants.should include(@r1c2s2)
+      end
+    end
+
     describe "#generation" do
       it "should find all nodes in the same generation as this one for a root node" do
         @r1.generation.should == [@r1, @r2, @r3]
@@ -403,7 +421,7 @@ describe "all nested set models", :shared => true do
     end
     
     describe "#kin" do
-      it "should find the patriarch and all its descendents" do
+      it "should find the patriarch and all its descendants" do
         @r1c2s2.kin.should == [@r1, @r1c1, @r1c1s1, @r1c2, @r1c2s1, @r1c2s2, @r1c2s2m1, @r1c2s3, @r1c3]
       end
     end
