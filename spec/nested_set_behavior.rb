@@ -73,21 +73,21 @@ describe "all nested set models", :shared => true do
   
   describe @model, "with many descendants" do
     before do
-      @r1 = @model.create!(valid_attributes(:name => 'r1'))
-      @r2 = @model.create!(valid_attributes(:name => 'r2'))
-      @r3 = @model.create!(valid_attributes(:name => 'r3'))
+      @r1 = @model.create!(valid_attributes)
+      @r2 = @model.create!(valid_attributes)
+      @r3 = @model.create!(valid_attributes)
 
-      @r1c1 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c1'))
-      @r1c2 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c2'))
-      @r1c3 = @model.create!(valid_attributes(:parent => @r1, :name => 'r1c3'))
-      @r2c1 = @model.create!(valid_attributes(:parent => @r2, :name => 'r2c1'))
+      @r1c1 = @model.create!(valid_attributes(:parent => @r1))
+      @r1c2 = @model.create!(valid_attributes(:parent => @r1))
+      @r1c3 = @model.create!(valid_attributes(:parent => @r1))
+      @r2c1 = @model.create!(valid_attributes(:parent => @r2))
 
-      @r1c1s1 = @model.create!(valid_attributes(:parent => @r1c1, :name => 'r1c1s1'))
-      @r1c2s1 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s1'))
-      @r1c2s2 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s2'))
-      @r1c2s3 = @model.create!(valid_attributes(:parent => @r1c2, :name => 'r1c2s3'))
+      @r1c1s1 = @model.create!(valid_attributes(:parent => @r1c1))
+      @r1c2s1 = @model.create!(valid_attributes(:parent => @r1c2))
+      @r1c2s2 = @model.create!(valid_attributes(:parent => @r1c2))
+      @r1c2s3 = @model.create!(valid_attributes(:parent => @r1c2))
 
-      @r1c2s2m1 = @model.create!(valid_attributes(:parent => @r1c2s2, :name => 'r1c2s2m1'))
+      @r1c2s2m1 = @model.create!(valid_attributes(:parent => @r1c2s2))
     end
     
     after do
