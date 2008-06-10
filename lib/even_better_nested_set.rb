@@ -77,7 +77,7 @@ module EvenBetterNestedSet
     
     def ancestors(force_reload=false)
       @ancestors = nil if force_reload
-      @ancestors ||= base_class.find :all, :conditions => ["left < ? AND right > ?", left, right], :order => 'left DESC'
+      @ancestors ||= base_class.find :all, :conditions => ["`left` < ? AND `right` > ?", left, right], :order => '`left` DESC'
     end
     
     def kin
@@ -120,7 +120,7 @@ module EvenBetterNestedSet
       elsif @ancestors
         @ancestors.size
       else
-        base_class.count :conditions => ["left < ? AND right > ?", left, right]
+        base_class.count :conditions => ["`left` < ? AND `right` > ?", left, right]
       end
     end
     
