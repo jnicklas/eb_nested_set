@@ -411,6 +411,12 @@ describe "all nested set models", :shared => true do
       end
     end
     
+    describe "#lineage" do
+      it "should return a node, it's parent and its parent's parents" do
+        @r1c2s2m1.lineage.should == [@r1c2s2m1, @r1c2s2, @r1c2, @r1]
+      end
+    end
+    
     describe "#level" do
       it "should give the depth from the node to its root" do
         @r1.level.should == 0
