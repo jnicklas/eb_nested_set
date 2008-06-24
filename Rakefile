@@ -9,7 +9,7 @@ NAME = "even_better_nested_set"
 GEM_VERSION = "0.1"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
-HOMEPAGE = "http://merb-plugins.rubyforge.org/gibberish_attributes/"
+HOMEPAGE = "http://github.com/jnicklas/even_better_nested_set/tree/master"
 SUMMARY = "A cool acts_as_nested_set alternative"
 
 spec = Gem::Specification.new do |s|
@@ -26,12 +26,6 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.autorequire = PLUGIN
   s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec}/**/*")
-
-  # toggle to test command line interface
-  if true
-    s.bindir = "bin"
-    s.executables = %w( templater )
-  end
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
