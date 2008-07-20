@@ -80,8 +80,8 @@ module EvenBetterNestedSet
       @ancestors ||= base_class.find :all, :conditions => ["`left` < ? AND `right` > ?", left, right], :order => '`left` DESC'
     end
     
-    def lineage
-      [self, *ancestors]
+    def lineage(force_reload=false)
+      [self, *ancestors(force_reload)]
     end
     
     def kin
