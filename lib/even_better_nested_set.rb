@@ -151,6 +151,8 @@ module EvenBetterNestedSet
     
     protected
     
+    attr_reader :nested_set_options
+    
     def illegal_nesting
       if parent_id? and family_ids.include?(parent_id)
         errors.add(:parent_id, 'cannot move node to its own descendant')
@@ -233,12 +235,22 @@ module EvenBetterNestedSet
     def base_class
       self.class.base_class
     end
+    
+    def validate_parent_is_within_scope
+      if nested_set_options[:scope] && parent_id
+        parent.reload # Make sure we are testing the record corresponding to the parent_id
+        if self.send(nested_set_options[:scope]) != parent.send(nested_set_options[:scope])
+          errors.add(:parent_id, "cannot be a record with a different #{nested_set_options[:scope]} to this record")
+        end
+      end
+    end
   end
   
   module ClassMethods
     
-    def acts_as_nested_set
-
+    def acts_as_nested_set(options = {})
+      options[:scope] = "#{options[:scope]}_id" if options[:scope]
+      
       named_scope :roots, :conditions => { :parent_id => nil }
       has_many :children, :class_name => self.name, :foreign_key => :parent_id
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
@@ -250,6 +262,13 @@ module EvenBetterNestedSet
       before_destroy :reload
       after_destroy :remove_node
       validate_on_update :illegal_nesting
+      validate :validate_parent_is_within_scope
+      
+      class_eval do
+        define_method :nested_set_options do
+          options
+        end
+      end
     end
     
   end

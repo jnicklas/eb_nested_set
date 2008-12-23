@@ -39,10 +39,19 @@ class TestMigration < ActiveRecord::Migration
       t.column :parent_id, :integer
       t.column :name, :string
     end
+    
+    create_table :employees, :force => true do |t|
+      t.column :left, :integer
+      t.column :right, :integer
+      t.column :parent_id, :integer
+      t.column :name, :string
+      t.column :company_id, :integer
+    end
   end
 
   def self.down
     drop_table :directories
+    drop_table :employees
   rescue
     nil
   end
