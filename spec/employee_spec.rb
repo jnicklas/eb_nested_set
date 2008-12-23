@@ -23,7 +23,7 @@ describe Employee, "with nested sets for two different companies" do
     # Company 2...
     Employee.with_options :company_id => 2 do |c2|
       @c2_1 = c2.create!(:name => "Company 2 - 1")
-      @c2_11 = c2.create!(:name => "Company 1 - 11", :parent => @c2_1)
+      @c2_11 = c2.create!(:name => "Company 2 - 11", :parent => @c2_1)
     end
   end
   
@@ -47,5 +47,24 @@ describe Employee, "with nested sets for two different companies" do
     @c1_11.parent_id = @c2_11.id
     @c1_11.save
     @c1_11.errors[:parent_id].should_not be_nil
+  end
+  
+  it "should keep the tree for company 1 and for company 2 entirely disjoint" do
+    c1_tree = (@c1_1.family + @c1_2.family).flatten
+    c2_tree = @c2_1.family
+    
+    (c1_tree & c2_tree).should be_empty
+  end
+  
+  it "should return the correct descendants when retrieving via a database query" do
+    @c1_1.descendants.should == [@c1_11, @c1_111, @c1_12]
+    @c1_2.descendants.should == []
+    @c2_1.descendants.should == [@c2_11]
+  end
+  
+  it "should return the correct levels when retrieving via a database query" do
+    @c1_1.family.map { |d| d.level }.should == [0, 1, 2, 1]
+    @c1_2.family.map { |d| d.level }.should == [0]
+    @c2_1.family.map { |d| d.level }.should == [0, 1]
   end
 end
