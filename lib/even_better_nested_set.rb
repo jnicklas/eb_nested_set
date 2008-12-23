@@ -13,27 +13,31 @@ module EvenBetterNestedSet
     def self.included(base)
       super
       base.extend ClassMethods
+      base.delegate :nested_set_column, :to => "self.class"
     end
     
     module ClassMethods
 
       def find_last_root
-        find(:first, :order => '`right` DESC', :conditions => { :parent_id => nil })
+        find(:first, :order => "#{nested_set_column(:right)} DESC", :conditions => { :parent_id => nil })
       end
 
       def find_boundaries(id)
-        connection.select_rows("SELECT `left`, `right` FROM `#{table_name}` WHERE `#{primary_key}` = #{id}").first
+        query = "SELECT #{nested_set_column(:left)}, #{nested_set_column(:right)}" +
+                "FROM #{connection.quote_table_name(table_name)}" +
+                "WHERE #{connection.quote_table_name(primary_key)} = #{id}"
+        connection.select_rows(query).first
       end
 
       def find_descendants(node)
         transaction do
           left, right = base_class.find_boundaries(node.id)
-          find(:all, :order => '`left` ASC', :conditions => ["`left` > ? AND `right` < ?", left, right])
+          find(:all, :order => "#{nested_set_column(:left)} ASC", :conditions => ["#{nested_set_column(:left)} > ? AND #{nested_set_column(:right)} < ?", left, right])
         end
       end
 
       def nested_set
-        sort_nodes_to_nested_set(find(:all, :order => '`left` ASC'))
+        sort_nodes_to_nested_set(find(:all, :order => "#{nested_set_column(:left)} ASC"))
       end
 
       def sort_nodes_to_nested_set(nodes)
@@ -55,6 +59,12 @@ module EvenBetterNestedSet
         end
         return roots
       end
+    
+      # In the future perhaps this can be extended to allow for custom column names specified
+      # as options
+      def nested_set_column(name)
+        connection.quote_column_name(name)
+      end
 
     end
     
@@ -69,7 +79,7 @@ module EvenBetterNestedSet
     def root
       transaction do
         reload_boundaries
-        @root ||= base_class.roots.find(:first, :conditions => ["`left` <= ? AND `right` >= ?", left, right])
+        @root ||= base_class.roots.find(:first, :conditions => ["#{nested_set_column(:left)} <= ? AND #{nested_set_column(:right)} >= ?", left, right])
       end
     end
     
@@ -77,7 +87,10 @@ module EvenBetterNestedSet
     
     def ancestors(force_reload=false)
       @ancestors = nil if force_reload
-      @ancestors ||= base_class.find :all, :conditions => ["`left` < ? AND `right` > ?", left, right], :order => '`left` DESC'
+      @ancestors ||= base_class.find(
+        :all,:conditions => ["#{nested_set_column(:left)} < ? AND #{nested_set_column(:right)} > ?", left, right],
+        :order => "#{nested_set_column(:left)} DESC"
+      )
     end
     
     def lineage(force_reload=false)
@@ -105,7 +118,9 @@ module EvenBetterNestedSet
       
       transaction do
         reload_boundaries
-        query = "SELECT id FROM `#{base_class.table_name}` WHERE `left` >= #{left} AND `right` <= #{right} ORDER BY `left`"
+        query = "SELECT id FROM #{base_class.connection.quote_table_name(base_class.table_name)} " + 
+                "WHERE #{nested_set_column(:left)} >= #{left} AND #{nested_set_column(:right)} <= #{right} " +
+                "ORDER BY #{nested_set_column(:left)}"
         @family_ids = base_class.connection.select_values(query).map(&:to_i)
       end
     end
@@ -124,7 +139,7 @@ module EvenBetterNestedSet
       elsif @ancestors
         @ancestors.size
       else
-        base_class.count :conditions => ["`left` < ? AND `right` > ?", left, right]
+        base_class.count :conditions => ["#{nested_set_column(:left)} < ? AND #{nested_set_column(:right)} > ?", left, right]
       end
     end
     
@@ -160,7 +175,7 @@ module EvenBetterNestedSet
     end
     
     def remove_node
-      base_class.delete_all ['`left` > ? AND `right` < ?', left, right] # TODO: Figure out what to do with children's destroy callbacks
+      base_class.delete_all ["#{nested_set_column(:left)} > ? AND #{nested_set_column(:right)} < ?", left, right] # TODO: Figure out what to do with children's destroy callbacks
       
       shift!(-node_width, right)
     end
@@ -211,11 +226,11 @@ module EvenBetterNestedSet
     
     def shift!(positions, left_boundary, right_boundary=nil)
       if right_boundary
-        base_class.update_all "`left`  = (`left`  + #{positions})", ["`left`  >= ? AND `left`  <= ?", left_boundary, right_boundary]
-        base_class.update_all "`right` = (`right` + #{positions})", ["`right` >= ? AND `right` <= ?", left_boundary, right_boundary]
+        base_class.update_all "#{nested_set_column(:left)}  = (#{nested_set_column(:left)}  + #{positions})", ["#{nested_set_column(:left)}  >= ? AND #{nested_set_column(:left)}  <= ?", left_boundary, right_boundary]
+        base_class.update_all "#{nested_set_column(:right)} = (#{nested_set_column(:right)} + #{positions})", ["#{nested_set_column(:right)} >= ? AND #{nested_set_column(:right)} <= ?", left_boundary, right_boundary]
       else
-        base_class.update_all "`left`  = (`left`  + #{positions})", ["`left` >= ?", left_boundary]
-        base_class.update_all "`right` = (`right` + #{positions})", ["`right` >= ?", left_boundary]
+        base_class.update_all "#{nested_set_column(:left)}  = (#{nested_set_column(:left)}  + #{positions})", ["#{nested_set_column(:left)} >= ?", left_boundary]
+        base_class.update_all "#{nested_set_column(:right)} = (#{nested_set_column(:right)} + #{positions})", ["#{nested_set_column(:right)} >= ?", left_boundary]
       end
     end
     

@@ -10,10 +10,19 @@ require 'even_better_nested_set'
 require 'spec'
 
 # change this if sqlite is unavailable
-dbconfig = {
-  :adapter => 'sqlite3',
-  :database => File.join(File.dirname(__FILE__), 'db', 'test.sqlite3')
-}
+case ENV["DB"]
+  when "postgresql"
+    dbconfig = {
+      :adapter => 'postgresql',
+      :database => 'even_better_nested_set_test',
+      :host => '127.0.0.1'
+    }
+  else
+    dbconfig = {
+      :adapter => 'sqlite3',
+      :database => File.join(File.dirname(__FILE__), 'db', 'test.sqlite3')
+    }
+end
 
 ActiveRecord::Base.establish_connection(dbconfig)
 ActiveRecord::Migration.verbose = false
@@ -28,7 +37,7 @@ def show_model_variables_for(context, model)
   end
 end
 
-#ActiveRecord::Base.logger = Logger.new(STDOUT)
+ActiveRecord::Base.logger = Logger.new(STDOUT)
 
 
 class TestMigration < ActiveRecord::Migration
