@@ -13,7 +13,6 @@ module EvenBetterNestedSet
     def self.included(base)
       super
       base.extend ClassMethods
-      base.delegate :nested_set_column, :to => "self.class"
     end
     
     module ClassMethods
@@ -43,7 +42,7 @@ module EvenBetterNestedSet
       def sort_nodes_to_nested_set(nodes)
         roots = []
         hashmap = {}
-        for node in nodes
+        for node in nodes.sort_by { |n| n.left }
           # if the parent is not in the hashmap, parent will be nil, therefore node will be a root node
           # in that case
           parent = node.parent_id ? hashmap[node.parent_id] : nil
@@ -266,11 +265,11 @@ module EvenBetterNestedSet
     def acts_as_nested_set(options = {})
       options[:scope] = "#{options[:scope]}_id" if options[:scope]
       
-      named_scope :roots, :conditions => { :parent_id => nil }
-      has_many :children, :class_name => self.name, :foreign_key => :parent_id
-      belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
-
       include NestedSet
+      
+      named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
+      has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
+      belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
       
       before_create :append_node
       before_update :move_node
@@ -284,6 +283,8 @@ module EvenBetterNestedSet
           options
         end
       end
+      
+      delegate :nested_set_column, :to => "self.class"
     end
     
   end
