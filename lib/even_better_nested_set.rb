@@ -18,7 +18,7 @@ module EvenBetterNestedSet
     module ClassMethods
 
       def find_last_root
-        find(:first, :order => "#{nested_set_column(:right)} DESC", :conditions => { :parent_id => nil })
+        find(:first, :order => "#{nested_set_column(:right)} DESC", :conditions => { nested_set_options[:parent_column] => nil })
       end
 
       def find_boundaries(id)
@@ -58,11 +58,10 @@ module EvenBetterNestedSet
         end
         return roots
       end
-    
-      # In the future perhaps this can be extended to allow for custom column names specified
-      # as options
+      
       def nested_set_column(name)
-        connection.quote_column_name(name)
+        column_name = nested_set_options["#{name}_column".to_sym]
+        connection.quote_column_name(column_name)
       end
 
     end
@@ -182,7 +181,7 @@ module EvenBetterNestedSet
     def append_node
       boundary = 1
       
-      if parent_id?
+      if !send(nested_set_options[:parent_column]).nil?
         transaction do
           boundary = parent(true).right
           shift! 2, boundary
@@ -251,7 +250,7 @@ module EvenBetterNestedSet
     end
     
     def validate_parent_is_within_scope
-      if nested_set_options[:scope] && parent_id
+      if nested_set_options[:scope] && send(nested_set_options[:parent_column])
         parent.reload # Make sure we are testing the record corresponding to the parent_id
         if self.send(nested_set_options[:scope]) != parent.send(nested_set_options[:scope])
           errors.add(:parent_id, "cannot be a record with a different #{nested_set_options[:scope]} to this record")
@@ -263,7 +262,20 @@ module EvenBetterNestedSet
   module ClassMethods
     
     def acts_as_nested_set(options = {})
-      options[:scope] = "#{options[:scope]}_id" if options[:scope]
+      options = {
+        :parent_column => "parent_id"
+      }.merge(options)
+      
+      if !options[:scope].nil? && options[:scope].to_s !~ /_id$/
+        options[:scope] = "#{options[:scope]}_id" 
+      end
+      
+      (class << self; self; end).class_eval do
+        define_method :nested_set_options do
+          options
+        end
+      end
+      delegate :nested_set_options, :to => "self.class"
       
       include NestedSet
       
@@ -277,12 +289,6 @@ module EvenBetterNestedSet
       after_destroy :remove_node
       validate_on_update :illegal_nesting
       validate :validate_parent_is_within_scope
-      
-      class_eval do
-        define_method :nested_set_options do
-          options
-        end
-      end
       
       delegate :nested_set_column, :to => "self.class"
     end

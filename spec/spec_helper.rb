@@ -56,11 +56,19 @@ class TestMigration < ActiveRecord::Migration
       t.column :name, :string
       t.column :company_id, :integer
     end
+    
+    create_table :custom_named_directories, :force => true do |t|
+      t.column :left, :integer
+      t.column :right, :integer
+      t.column :baz_id, :integer # parent_id
+      t.column :name, :string
+    end
   end
 
   def self.down
     drop_table :directories
     drop_table :employees
+    drop_table :custom_named_directories
   rescue
     nil
   end
@@ -75,3 +83,14 @@ end
 
 TestMigration.down
 TestMigration.up
+
+module AttributeHelper
+  def invalid_attributes(options = {})
+    return {  }.merge(options)
+  end
+  
+  def valid_attributes(options = {})
+    $count = $count ? $count + 1 : 0
+    return { :name => "item#{$count}" }.merge(options)
+  end
+end
