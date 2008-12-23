@@ -27,6 +27,10 @@ describe Employee, "with nested sets for two different companies" do
     end
   end
   
+  after do
+    Employee.delete_all
+  end
+  
   it "should not allow a new employee in one company to be a child of an employee in the other company, when parent is assigned to" do
     @employee = Employee.create(:company_id => 1, :parent => @c2_11)
     @employee.errors[:parent_id].should_not be_nil
