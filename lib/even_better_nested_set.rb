@@ -28,13 +28,6 @@ module EvenBetterNestedSet
         connection.select_rows(query).first
       end
 
-      def find_descendants(node)
-        transaction do
-          left, right = base_class.find_boundaries(node.id)
-          find(:all, :order => "#{nested_set_column(:left)} ASC", :conditions => ["#{nested_set_column(:left)} > ? AND #{nested_set_column(:right)} < ?", left, right])
-        end
-      end
-
       def nested_set
         sort_nodes_to_nested_set(find(:all, :order => "#{nested_set_column(:left)} ASC"))
       end
@@ -63,6 +56,16 @@ module EvenBetterNestedSet
       # as options
       def nested_set_column(name)
         connection.quote_column_name(name)
+      end
+      
+      # Recalculates the left and right values for the entire tree
+      def recalculate_nested_set
+        transaction do
+          left = 1
+          roots.each do |root|
+            left = root.recalculate_nested_set(left)
+          end
+        end
       end
 
     end
@@ -101,7 +104,7 @@ module EvenBetterNestedSet
     end
     
     def descendants
-      base_class.find_descendants(self)
+      base_class.descendants(self)
     end
     
     def cache_nested_set
@@ -161,6 +164,17 @@ module EvenBetterNestedSet
     
     def right=(right) #:nodoc:
       raise EvenBetterNestedSet::IllegalAssignmentError, "right is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+    end
+    
+    def recalculate_nested_set(left)
+      child_left = left + 1
+      children.each do |child|
+        child_left = child.recalculate_nested_set(child_left)
+      end
+      set_boundaries(left, child_left)
+      save_without_validation!
+      
+      right + 1
     end
     
     protected
@@ -270,6 +284,12 @@ module EvenBetterNestedSet
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
       has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
+      
+      named_scope :descendants, lambda { |node|
+        left, right = find_boundaries(node.id)
+        { :conditions => ["#{nested_set_column(:left)} > ? and #{nested_set_column(:right)} < ?", left, right],
+          :order => "#{nested_set_column(:left)} asc" }
+      }
       
       before_create :append_node
       before_update :move_node

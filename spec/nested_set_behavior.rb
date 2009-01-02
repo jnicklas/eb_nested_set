@@ -266,16 +266,47 @@ describe "all nested set models", :shared => true do
       end
     end
     
-    describe ".find_descendants" do
-      it "should find all descendants for a specific node" do
+    describe ".recalculate_nested_set" do
+      def values
+        @model.find(:all, :order => :id).map { |node| [node.left, node.right] }
+      end
+      
+      before do
+        @model.find(:all, :order => :id).each do |i|
+          i.send(:set_boundaries, rand(1000), rand(1000))
+          i.save_without_validation!
+        end
+      end
+      
+      it "should correctly restore the left and right values for a messed up nested set" do
+        @model.recalculate_nested_set
+        [@r1, @r2, @r3].each(&:reload)
         
-        roots = @model.find_descendants(@r1c2)
+        expected = [
+          [@r1c1, @r1c2, @r1c3, @r1c1s1, @r1c2s1, @r1c2s2, @r1c2s3, @r1c2s2m1],
+          [@r2c1],
+          [],
+          [@r1c1s1],
+          [@r1c2s1, @r1c2s2, @r1c2s3, @r1c2s2m1],
+          [],
+          [],
+          [],
+          [],
+          [@r1c2s2m1],
+          [],
+          []
+        ]
         
-        roots[0].should == @r1c2s1
-        roots[1].should == @r1c2s2
-        roots[2].should == @r1c2s2m1
-        roots[3].should == @r1c2s3
-        
+        [@r1, @r2, @r3, @r1c1, @r1c2, @r1c3, @r2c1, @r1c1s1, @r1c2s1, @r1c2s2, @r1c2s3, @r1c2s2m1].each_with_index do |node, i|
+          node.descendants.find(:all, :order => :id).should == expected[i]
+        end
+      end
+      
+      it "should leave all records valid after running" do
+        @model.recalculate_nested_set
+        @model.find(:all).each do |node|
+          node.should be_valid
+        end
       end
     end
     
