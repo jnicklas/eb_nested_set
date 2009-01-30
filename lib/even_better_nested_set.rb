@@ -149,13 +149,17 @@ module EvenBetterNestedSet
       left..right
     end
     
+    def children
+      @cached_children || uncached_children
+    end
+    
     def cache_parent(parent) #:nodoc:
       self.parent = parent
     end
     
     def cache_children(*nodes) #:nodoc:
       @cached_children ||= []
-      children.target = @cached_children.push(*nodes)
+      @cached_children.push(*nodes)
     end
 
     def left=(left) #:nodoc:
@@ -282,7 +286,10 @@ module EvenBetterNestedSet
       include NestedSet
       
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
-      has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
+      
+      has_many :uncached_children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
+      protected :uncached_children, :uncached_children=
+      
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
       
       named_scope :descendants, lambda { |node|
