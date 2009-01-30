@@ -39,6 +39,9 @@ module EvenBetterNestedSet
           # if the parent is not in the hashmap, parent will be nil, therefore node will be a root node
           # in that case
           parent = node.parent_id ? hashmap[node.parent_id] : nil
+          
+          # make sure this is called at least once on every node, so leaves know that they have *no* children
+          node.cache_children()
 
           if parent
             node.cache_parent(parent)
