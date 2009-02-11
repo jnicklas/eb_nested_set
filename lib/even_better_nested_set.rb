@@ -321,4 +321,4 @@ module EvenBetterNestedSet
   
 end
 
-ActiveRecord::Base.send(:include, EvenBetterNestedSet)
+ActiveRecord::Base.send(:include, EvenBetterNestedSet) if defined?(ActiveRecord)
