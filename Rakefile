@@ -4,8 +4,7 @@ require 'rubygems/specification'
 require 'date'
 require 'spec/rake/spectask'
 
-PLUGIN = "even_better_nested_set"
-NAME = "even_better_nested_set"
+GEM = "even_better_nested_set"
 GEM_VERSION = "0.1"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
@@ -13,19 +12,19 @@ HOMEPAGE = "http://github.com/jnicklas/even_better_nested_set/tree/master"
 SUMMARY = "A cool acts_as_nested_set alternative"
 
 spec = Gem::Specification.new do |s|
-  s.name = NAME
+  s.name = GEM
   s.version = GEM_VERSION
   s.platform = Gem::Platform::RUBY
   s.has_rdoc = true
-  s.extra_rdoc_files = ["README", "LICENSE", 'TODO']
+  s.extra_rdoc_files = ['README.md', 'LICENSE']
   s.summary = SUMMARY
   s.description = s.summary
   s.author = AUTHOR
   s.email = EMAIL
   s.homepage = HOMEPAGE
   s.require_path = 'lib'
-  s.autorequire = PLUGIN
-  s.files = %w(LICENSE README Rakefile TODO) + Dir.glob("{lib,spec}/**/*")
+  s.autorequire = GEM
+  s.files = %w(LICENSE README.md Rakefile init.rb) + Dir.glob("{lib,spec}/**/*")
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
@@ -62,6 +61,7 @@ namespace :spec do
     t.rcov = true
     t.rcov_dir = "doc/coverage"
     t.rcov_opts = ['--exclude', 'spec']
+    t.spec_opts = ['--color']
   end
   
   desc "Generate an html report"
@@ -70,7 +70,7 @@ namespace :spec do
     t.rcov = true
     t.rcov_dir = "doc/coverage"
     t.rcov_opts = ['--exclude', 'spec']
-    t.spec_opts = ["--format", "html:doc/reports/specs.html"]
+    t.spec_opts = ['--color', "--format", "html:doc/reports/specs.html"]
     t.fail_on_error = false
   end
 
