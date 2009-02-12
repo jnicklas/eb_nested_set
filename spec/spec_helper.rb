@@ -49,8 +49,8 @@ end
 class TestMigration < ActiveRecord::Migration
   def self.up
     create_table :directories, :force => true do |t|
-      t.column :left, :integer
-      t.column :right, :integer
+      t.column :lft, :integer
+      t.column :rgt, :integer
       t.column :parent_id, :integer
       t.column :name, :string
     end

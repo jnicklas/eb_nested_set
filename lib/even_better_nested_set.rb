@@ -16,15 +16,17 @@ module EvenBetterNestedSet
     end
     
     module ClassMethods
-
+      
+      attr_accessor :nested_set_options
+      
       def find_last_root
         find(:first, :order => "#{nested_set_column(:right)} DESC", :conditions => { :parent_id => nil })
       end
 
       def find_boundaries(id)
         query = "SELECT #{nested_set_column(:left)}, #{nested_set_column(:right)}" +
-                "FROM #{quote_db_label(table_name)}" +
-                "WHERE #{quote_db_label(primary_key)} = #{id}"
+                "FROM #{quote_db_property(table_name)}" +
+                "WHERE #{quote_db_property(primary_key)} = #{id}"
         connection.select_rows(query).first
       end
 
@@ -55,15 +57,8 @@ module EvenBetterNestedSet
         return roots
       end
       
-      def set_nested_set_columns(left,right)
-        @nested_set_columns = {
-          :left => quote_db_label(left||'lft'),
-          :right => quote_db_label(right||'rgt')
-        }
-      end
-      
       def nested_set_column(name)
-        @nested_set_columns[name.to_sym]
+        quote_db_property(nested_set_options[name])
       end
       
       # Recalculates the left and right values for the entire tree
@@ -76,8 +71,8 @@ module EvenBetterNestedSet
         end
       end
       
-      def quote_db_label(name)
-        "`#{name}`".gsub('.','`.`')
+      def quote_db_property(property)
+        "`#{property}`".gsub('.','`.`')
       end
       
     end
@@ -132,7 +127,7 @@ module EvenBetterNestedSet
       
       transaction do
         reload_boundaries
-        query = "SELECT id FROM #{self.class.quote_db_label(base_class.table_name)} " + 
+        query = "SELECT id FROM #{self.class.quote_db_property(base_class.table_name)} " + 
                 "WHERE #{nested_set_column(:left)} >= #{left} AND #{nested_set_column(:right)} <= #{right} " +
                 "ORDER BY #{nested_set_column(:left)}"
         @family_ids = base_class.connection.select_values(query).map(&:to_i)
@@ -173,9 +168,17 @@ module EvenBetterNestedSet
       @cached_children ||= []
       @cached_children.push(*nodes)
     end
-
+    
+    def left
+      read_attribute(self.class.nested_set_options[:left])
+    end
+    
     def left=(left) #:nodoc:
       raise EvenBetterNestedSet::IllegalAssignmentError, "left is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+    end
+    
+    def right
+      read_attribute(self.class.nested_set_options[:right])
     end
     
     def right=(right) #:nodoc:
@@ -194,8 +197,6 @@ module EvenBetterNestedSet
     end
     
     protected
-    
-    attr_reader :nested_set_options
     
     def illegal_nesting
       if parent_id? and family_ids.include?(parent_id)
@@ -268,8 +269,8 @@ module EvenBetterNestedSet
     end
     
     def set_boundaries(left, right)
-      write_attribute(:left, left)
-      write_attribute(:right, right)
+      write_attribute(self.class.nested_set_options[:left], left)
+      write_attribute(self.class.nested_set_options[:right], right)
     end
         
     def reload_boundaries
@@ -281,10 +282,10 @@ module EvenBetterNestedSet
     end
     
     def validate_parent_is_within_scope
-      if nested_set_options[:scope] && parent_id
+      if self.class.nested_set_options[:scope] && parent_id
         parent.reload # Make sure we are testing the record corresponding to the parent_id
-        if self.send(nested_set_options[:scope]) != parent.send(nested_set_options[:scope])
-          errors.add(:parent_id, "cannot be a record with a different #{nested_set_options[:scope]} to this record")
+        if self.send(self.class.nested_set_options[:scope]) != parent.send(self.class.nested_set_options[:scope])
+          errors.add(:parent_id, "cannot be a record with a different #{self.class.nested_set_options[:scope]} to this record")
         end
       end
     end
@@ -293,12 +294,12 @@ module EvenBetterNestedSet
   module ClassMethods
     
     def acts_as_nested_set(options = {})
+      options = { :left => :left, :right => :right }.merge!(options)
       options[:scope] = "#{options[:scope]}_id" if options[:scope]
-      
       
       include NestedSet
       
-      set_nested_set_columns options[:left], options[:right]
+      self.nested_set_options = options
       
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
       
@@ -319,12 +320,6 @@ module EvenBetterNestedSet
       after_destroy :remove_node
       validate_on_update :illegal_nesting
       validate :validate_parent_is_within_scope
-      
-      class_eval do
-        define_method :nested_set_options do
-          options
-        end
-      end
       
       delegate :nested_set_column, :to => "self.class"
     end

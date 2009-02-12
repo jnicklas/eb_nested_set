@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 require File.dirname(__FILE__) + '/nested_set_behavior'
 
 class Employee < ActiveRecord::Base
-  acts_as_nested_set :scope => :company, :left => 'left', :right => 'right'
+  acts_as_nested_set :scope => :company
   
   validates_presence_of :name
 end
