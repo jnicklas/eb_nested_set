@@ -160,6 +160,10 @@ module EvenBetterNestedSet
       @cached_children || uncached_children
     end
     
+    def children?
+      children.empty?
+    end
+    
     def cache_parent(parent) #:nodoc:
       self.parent = parent
     end
