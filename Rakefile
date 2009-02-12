@@ -5,7 +5,7 @@ require 'date'
 require 'spec/rake/spectask'
 
 GEM = "even_better_nested_set"
-GEM_VERSION = "0.3"
+GEM_VERSION = "0.3.1"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
 HOMEPAGE = "http://github.com/jnicklas/even_better_nested_set/tree/master"
