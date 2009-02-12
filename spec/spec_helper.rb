@@ -3,7 +3,7 @@ $:.push File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'rubygems'
 require 'active_record'
-require 'ruby-debug'
+# require 'ruby-debug' # Slows down the tests massively
 
 require 'even_better_nested_set'
 
