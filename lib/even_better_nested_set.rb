@@ -23,8 +23,8 @@ module EvenBetterNestedSet
 
       def find_boundaries(id)
         query = "SELECT #{nested_set_column(:left)}, #{nested_set_column(:right)}" +
-                "FROM #{connection.quote_table_name(table_name)}" +
-                "WHERE #{connection.quote_table_name(primary_key)} = #{id}"
+                "FROM #{quote_db_label(table_name)}" +
+                "WHERE #{quote_db_label(primary_key)} = #{id}"
         connection.select_rows(query).first
       end
 
@@ -54,11 +54,16 @@ module EvenBetterNestedSet
         end
         return roots
       end
-    
-      # In the future perhaps this can be extended to allow for custom column names specified
-      # as options
+      
+      def set_nested_set_columns(left,right)
+        @nested_set_columns = {
+          :left => quote_db_label(left||'lft'),
+          :right => quote_db_label(right||'rgt')
+        }
+      end
+      
       def nested_set_column(name)
-        connection.quote_column_name(name)
+        @nested_set_columns[name.to_sym]
       end
       
       # Recalculates the left and right values for the entire tree
@@ -70,7 +75,11 @@ module EvenBetterNestedSet
           end
         end
       end
-
+      
+      def quote_db_label(name)
+        "`#{name}`".gsub('.','`.`')
+      end
+      
     end
     
     def root?
@@ -123,7 +132,7 @@ module EvenBetterNestedSet
       
       transaction do
         reload_boundaries
-        query = "SELECT id FROM #{base_class.connection.quote_table_name(base_class.table_name)} " + 
+        query = "SELECT id FROM #{self.class.quote_db_label(base_class.table_name)} " + 
                 "WHERE #{nested_set_column(:left)} >= #{left} AND #{nested_set_column(:right)} <= #{right} " +
                 "ORDER BY #{nested_set_column(:left)}"
         @family_ids = base_class.connection.select_values(query).map(&:to_i)
@@ -286,7 +295,10 @@ module EvenBetterNestedSet
     def acts_as_nested_set(options = {})
       options[:scope] = "#{options[:scope]}_id" if options[:scope]
       
+      
       include NestedSet
+      
+      set_nested_set_columns options[:left], options[:right]
       
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
       
