@@ -2,6 +2,30 @@
 
 A nested set is a datastruture in a database, sort of like a tree, but unlike a tree it allows you to find all descendants of a node with a single query. Loading a deeply nested structure with nested sets is therefore a lot more efficient than using a tree. So what's the disadvantage? Nested sets are a lot harder to maintain, since inserting and moving records requires management and it is easy to corrupt the dataset. Enter: EvenBetterNestedSet. Amount of micromanaging you need to do: 0. EvenBetterNestedSet does it all for you.
 
+## Installation
+
+Stable:
+
+    [sudo] gem install eb_nested_set
+    
+Edge:
+
+    [sudo] gem install jnicklas-eb_nested_set --source http://gems.github.com
+
+From source:
+
+    git clone git://github.com/jnicklas/even_better_nested_set.git
+    cd even_better_nested_set
+    rake install
+
+If you're running Rails, just add it to your environment.rb file
+
+    config.gem 'eb_nested_set'
+
+You can also install it as a Rails plugin.
+
+    script/plugin install git://github.com/jnicklas/even_better_nested_set.git
+
 ## Declaring nested sets
 
 This is how you declare a nested set:
