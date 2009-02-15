@@ -3,7 +3,7 @@ $:.push File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'rubygems'
 require 'active_record'
-require 'ruby-debug'
+# require 'ruby-debug' # Slows down the tests massively
 
 require 'eb_nested_set'
 
@@ -49,8 +49,8 @@ end
 class TestMigration < ActiveRecord::Migration
   def self.up
     create_table :directories, :force => true do |t|
-      t.column :left, :integer
-      t.column :right, :integer
+      t.column :lft, :integer
+      t.column :rgt, :integer
       t.column :parent_id, :integer
       t.column :name, :string
     end

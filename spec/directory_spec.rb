@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 require File.dirname(__FILE__) + '/nested_set_behavior'
 
 class Directory < ActiveRecord::Base
-  acts_as_nested_set
+  acts_as_nested_set :left => :lft, :right => :rgt
   
   validates_presence_of :name
 end

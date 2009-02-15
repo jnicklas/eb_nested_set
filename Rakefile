@@ -5,7 +5,7 @@ require 'date'
 require 'spec/rake/spectask'
 
 GEM = "eb_nested_set"
-GEM_VERSION = "0.2.1"
+GEM_VERSION = "0.3.2"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
 HOMEPAGE = "http://github.com/jnicklas/even_better_nested_set/tree/master"
@@ -52,21 +52,31 @@ namespace :jruby do
   
 end
 
-file_list = FileList['spec/*_spec.rb']
+spec_files = FileList['spec/*_spec.rb']
+
+desc 'Default: run unit tests.'
+task :default => 'spec'
+
+task :specs => :spec
+desc "Run all examples"
+Spec::Rake::SpecTask.new('spec') do |t|
+  t.spec_opts = ['--color']
+  t.spec_files = spec_files
+end
 
 namespace :spec do
   desc "Run all examples with RCov"
   Spec::Rake::SpecTask.new('rcov') do |t|
-    t.spec_files = file_list
+    t.spec_files = spec_files
     t.rcov = true
     t.rcov_dir = "doc/coverage"
-    t.rcov_opts = ['--exclude', 'spec']
+    t.rcov_opts = ['--exclude', 'spec,rspec-*,rcov-*,gems']
     t.spec_opts = ['--color']
   end
   
   desc "Generate an html report"
   Spec::Rake::SpecTask.new('report') do |t|
-    t.spec_files = file_list
+    t.spec_files = spec_files
     t.rcov = true
     t.rcov_dir = "doc/coverage"
     t.rcov_opts = ['--exclude', 'spec']
@@ -75,7 +85,3 @@ namespace :spec do
   end
 
 end
-
-
-desc 'Default: run unit tests.'
-task :default => 'spec:rcov'
