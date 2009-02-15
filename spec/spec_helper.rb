@@ -5,7 +5,7 @@ require 'rubygems'
 require 'active_record'
 require 'ruby-debug'
 
-require 'even_better_nested_set'
+require 'eb_nested_set'
 
 require 'spec'
 
