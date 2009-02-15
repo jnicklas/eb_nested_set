@@ -6,32 +6,6 @@ describe "all nested set models", :shared => true do
       @instance = @model.new(valid_attributes)
     end
     
-    it "should throw an error when attempting to assign left directly" do
-      lambda {
-        @instance.left = 42
-      }.should raise_error(EvenBetterNestedSet::IllegalAssignmentError)
-      @instance.left.should_not == 42
-    end
-    
-    it "should throw an error when attempting to assign right directly" do
-      lambda {
-        @instance.right = 42
-      }.should raise_error(EvenBetterNestedSet::IllegalAssignmentError)
-      @instance.right.should_not == 42
-    end
-    
-    it "should throw an error when mass assigning to left" do
-      lambda {
-        @model.new(valid_attributes(:left => 1))
-      }.should raise_error(EvenBetterNestedSet::IllegalAssignmentError)
-    end
-    
-    it "should throw an error when mass assigning to right" do
-      lambda {
-        @model.new(valid_attributes(:right => 1))
-      }.should raise_error(EvenBetterNestedSet::IllegalAssignmentError)
-    end
-    
     it "should change the parent_id in the database when a parent is assigned" do
       without_changing_the_database do
         @parent = @model.create!(valid_attributes)

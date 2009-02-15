@@ -189,16 +189,8 @@ module EvenBetterNestedSet
       read_attribute(self.class.nested_set_options[:left])
     end
     
-    def left=(left) #:nodoc:
-      raise EvenBetterNestedSet::IllegalAssignmentError, "left is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
-    end
-    
     def right
       read_attribute(self.class.nested_set_options[:right])
-    end
-    
-    def right=(right) #:nodoc:
-      raise EvenBetterNestedSet::IllegalAssignmentError, "right is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
     end
     
     def recalculate_nested_set(left)
@@ -316,6 +308,16 @@ module EvenBetterNestedSet
       include NestedSet
       
       self.nested_set_options = options
+      
+      class_eval <<-RUBY, __FILE__, __LINE__+1
+        def #{options[:left]}=(left)
+          raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:left]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+        end
+
+        def #{options[:right]}=(right)
+          raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:right]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+        end
+      RUBY
       
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
       
