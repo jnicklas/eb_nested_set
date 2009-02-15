@@ -260,6 +260,33 @@ describe "all nested set models", :shared => true do
         node.children[1].children[0].should == @r1c2s2m1
         node.children[2].should == @r1c2s3
       end
+      
+      it "should allow find with conditions" do
+        node = @model.find_with_nested_set(:first, :conditions => { :id => @r1c2.id })
+      
+        @model.delete_all
+
+        node.should == @r1c2
+        node.children[0].should == @r1c2s1
+        node.children[1].should == @r1c2s2
+        node.children[1].children[0].should == @r1c2s2m1
+        node.children[2].should == @r1c2s3
+      end
+      
+      it "should allow find all with conditions" do
+        nodes = @model.find_with_nested_set(:all, :conditions => { :parent_id => @r1.id })
+      
+        @model.delete_all
+
+        nodes[0].should == @r1c1
+        nodes[0].children[0].should == @r1c1s1
+        nodes[1].should == @r1c2
+        nodes[1].children[0].should == @r1c2s1
+        nodes[1].children[1].should == @r1c2s2
+        nodes[1].children[1].children[0].should == @r1c2s2m1
+        nodes[1].children[2].should == @r1c2s3
+        nodes[2].should == @r1c3
+      end
     end
     
     describe ".sort_nodes_to_nested_set" do

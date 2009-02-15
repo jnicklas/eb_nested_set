@@ -34,10 +34,16 @@ module EvenBetterNestedSet
         sort_nodes_to_nested_set(find(:all, :order => "#{nested_set_column(:left)} ASC"))
       end
       
-      def find_with_nested_set(id)
-        node = find(id)
-        node.cache_nested_set
-        node
+      def find_with_nested_set(*args)
+        result = find(*args)
+        if result.respond_to?(:cache_nested_set)
+          result.cache_nested_set
+        elsif result.respond_to?(:each)
+          result.each do |node|
+            node.cache_nested_set
+          end
+        end
+        result
       end
 
       def sort_nodes_to_nested_set(nodes)
