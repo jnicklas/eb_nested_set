@@ -33,6 +33,12 @@ module EvenBetterNestedSet
       def nested_set
         sort_nodes_to_nested_set(find(:all, :order => "#{nested_set_column(:left)} ASC"))
       end
+      
+      def find_with_nested_set(id)
+        node = find(id)
+        node.cache_nested_set
+        node
+      end
 
       def sort_nodes_to_nested_set(nodes)
         roots = []

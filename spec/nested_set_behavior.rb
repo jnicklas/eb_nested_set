@@ -248,6 +248,20 @@ describe "all nested set models", :shared => true do
       end
     end
     
+    describe ".find_with_nested_set" do
+      it "should find a single node and cache it's descendants" do
+        node = @model.find_with_nested_set(@r1c2.id)
+      
+        @model.delete_all
+
+        node.should == @r1c2
+        node.children[0].should == @r1c2s1
+        node.children[1].should == @r1c2s2
+        node.children[1].children[0].should == @r1c2s2m1
+        node.children[2].should == @r1c2s3
+      end
+    end
+    
     describe ".sort_nodes_to_nested_set" do
       it "should accept a list of nodes and sort them to a nested set" do
         roots = @model.sort_nodes_to_nested_set(@model.find(:all))

@@ -35,3 +35,7 @@ EvenBetterNestedSet will not automatically cache children for you, because it as
 
     d = Directory.find(42)
     d.cache_nested_set
+    
+or more conveniently:
+
+    d = Directory.find_with_nested_set(42)
