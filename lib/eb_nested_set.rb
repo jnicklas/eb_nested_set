@@ -273,32 +273,45 @@ module EvenBetterNestedSet
     end
     
     ##
-    # Returns a range from the left to the right boundary of this node
-    #
-    # @return [Range] 
+    # @return [Range] the left to the right boundary of this node
     #
     def bounds
       left..right
     end
     
-    def cache_parent(parent) #:nodoc:
-      self.parent = parent
-    end
-    
-    def cache_children(*nodes) #:nodoc:
-      @cached_children ||= []
-      children.target = @cached_children.push(*nodes)
-    end
-    
+    ##
+    # @return [Integer] the left boundary of this node
+    #
     def left
       read_attribute(self.class.nested_set_options[:left])
     end
     
+    ##
+    # @return [Integer] the right boundary of this node
+    #
     def right
       read_attribute(self.class.nested_set_options[:right])
     end
     
-    def recalculate_nested_set(left)
+    ##
+    # Caches the node as this node's parent.
+    #
+    def cache_parent(parent) #:nodoc:
+      self.parent = parent
+    end
+    
+    ##
+    # Caches the nodes as this node's children.
+    #
+    def cache_children(*nodes) #:nodoc:
+      @cached_children ||= []
+      children.target = @cached_children.push(*nodes)
+    end
+
+    ##
+    # Rebuild this node's childrens boundaries
+    #
+    def recalculate_nested_set(left) #:nodoc:
       child_left = left + 1
       children.each do |child|
         child_left = child.recalculate_nested_set(child_left)
