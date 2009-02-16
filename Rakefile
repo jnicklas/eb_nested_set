@@ -3,6 +3,7 @@ require 'rake/gempackagetask'
 require 'rubygems/specification'
 require 'date'
 require 'spec/rake/spectask'
+require 'yard'
 
 GEM = "eb_nested_set"
 GEM_VERSION = "0.3.3"
@@ -25,6 +26,10 @@ spec = Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.autorequire = GEM
   s.files = %w(LICENSE README.md Rakefile init.rb) + Dir.glob("{lib,spec}/**/*")
+end
+
+YARD::Rake::YardocTask.new do |t|
+  t.files   = ["README.md", "LICENSE", "TODO", 'lib/**/*.rb']
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
