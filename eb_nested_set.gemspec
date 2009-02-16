@@ -2,12 +2,12 @@
 
 Gem::Specification.new do |s|
   s.name = %q{eb_nested_set}
-  s.version = "0.3.2"
+  s.version = "0.3.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Jonas Nicklas"]
   s.autorequire = %q{eb_nested_set}
-  s.date = %q{2009-02-15}
+  s.date = %q{2009-02-16}
   s.description = %q{A cool acts_as_nested_set alternative}
   s.email = %q{jonas.nicklas@gmail.com}
   s.extra_rdoc_files = ["README.md", "LICENSE"]
