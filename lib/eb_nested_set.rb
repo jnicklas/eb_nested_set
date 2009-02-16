@@ -1,13 +1,57 @@
 module EvenBetterNestedSet
   
-  def self.included(base)
-    super
-    base.extend ClassMethods
-  end
-  
   class NestedSetError < StandardError; end
   class IllegalAssignmentError < NestedSetError; end
-  
+
+  ##
+  # Declare this model as a nested set. Automatically adds all methods in +NestedSet+ to the model, as
+  # well as parent and children associations.
+  #
+  # == Options
+  # left [Symbol]:: the name of the column that contains the left boundary [Defaults to +left+]
+  # right [Symbol]:: the name of the column that contains the right boundary [Defaults to +right+]
+  # scope [Symbol]:: the name of an association to scope this nested set to
+  #
+  # @param [Hash] options a set of options
+  #
+  def acts_as_nested_set(options={})
+    options = { :left => :left, :right => :right }.merge!(options)
+    options[:scope] = "#{options[:scope]}_id" if options[:scope]
+
+    include NestedSet
+
+    self.nested_set_options = options
+
+    class_eval <<-RUBY, __FILE__, __LINE__+1
+      def #{options[:left]}=(left)
+        raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:left]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+      end
+
+      def #{options[:right]}=(right)
+        raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:right]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
+      end
+    RUBY
+
+    named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
+    has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
+    belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
+
+    named_scope :descendants, lambda { |node|
+      left, right = find_boundaries(node.id)
+      { :conditions => ["#{nested_set_column(:left)} > ? and #{nested_set_column(:right)} < ?", left, right],
+        :order => "#{nested_set_column(:left)} asc" }
+    }
+
+    before_create :append_node
+    before_update :move_node
+    before_destroy :reload
+    after_destroy :remove_node
+    validate_on_update :illegal_nesting
+    validate :validate_parent_is_within_scope
+
+    delegate :nested_set_column, :to => "self.class"
+  end
+
   module NestedSet
     
     def self.included(base)
@@ -421,48 +465,6 @@ module EvenBetterNestedSet
     end
   end
   
-  module ClassMethods
-    
-    def acts_as_nested_set(options = {})
-      options = { :left => :left, :right => :right }.merge!(options)
-      options[:scope] = "#{options[:scope]}_id" if options[:scope]
-      
-      include NestedSet
-      
-      self.nested_set_options = options
-      
-      class_eval <<-RUBY, __FILE__, __LINE__+1
-        def #{options[:left]}=(left)
-          raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:left]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
-        end
-
-        def #{options[:right]}=(right)
-          raise EvenBetterNestedSet::IllegalAssignmentError, "#{options[:right]} is an internal attribute used by EvenBetterNestedSet, do not assign it directly as is may corrupt the data in your database"
-        end
-      RUBY
-      
-      named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
-      has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
-      belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
-      
-      named_scope :descendants, lambda { |node|
-        left, right = find_boundaries(node.id)
-        { :conditions => ["#{nested_set_column(:left)} > ? and #{nested_set_column(:right)} < ?", left, right],
-          :order => "#{nested_set_column(:left)} asc" }
-      }
-      
-      before_create :append_node
-      before_update :move_node
-      before_destroy :reload
-      after_destroy :remove_node
-      validate_on_update :illegal_nesting
-      validate :validate_parent_is_within_scope
-      
-      delegate :nested_set_column, :to => "self.class"
-    end
-    
-  end
-  
 end
 
-ActiveRecord::Base.send(:include, EvenBetterNestedSet) if defined?(ActiveRecord)
+ActiveRecord::Base.extend EvenBetterNestedSet if defined?(ActiveRecord)
