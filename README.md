@@ -63,3 +63,11 @@ EvenBetterNestedSet will not automatically cache children for you, because it as
 or more conveniently:
 
     d = Directory.find_with_nested_set(42)
+
+## I18n
+
+Add these keys to your translation file:
+
+    even_better_nested_set:
+      parent_not_in_scope: "nay, thy parent not be in scope {{scope_name}}"
+      illegal_nesting: "arr tis be illegal nesting"
