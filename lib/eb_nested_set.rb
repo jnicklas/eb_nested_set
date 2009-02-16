@@ -280,14 +280,6 @@ module EvenBetterNestedSet
     def bounds
       left..right
     end
-
-    def children
-      @cached_children || uncached_children
-    end
-    
-    def children?
-      children.empty?
-    end
     
     def cache_parent(parent) #:nodoc:
       self.parent = parent
@@ -295,7 +287,7 @@ module EvenBetterNestedSet
     
     def cache_children(*nodes) #:nodoc:
       @cached_children ||= []
-      @cached_children.push(*nodes)
+      children.target = @cached_children.push(*nodes)
     end
     
     def left
@@ -437,10 +429,7 @@ module EvenBetterNestedSet
       RUBY
       
       named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
-      
-      has_many :uncached_children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
-      protected :uncached_children, :uncached_children=
-      
+      has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
       belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
       
       named_scope :descendants, lambda { |node|
