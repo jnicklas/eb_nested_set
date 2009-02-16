@@ -19,10 +19,20 @@ module EvenBetterNestedSet
       
       attr_accessor :nested_set_options
       
+      ##
+      # Finds the last root, used internally to find the point to insert new roots
+      #
+      # @return [ActiveRecord::Base] the last root node
+      #
       def find_last_root
         find(:first, :order => "#{nested_set_column(:right)} DESC", :conditions => { :parent_id => nil })
       end
 
+      ##
+      # Finds the left and right boundaries of a node given an id.
+      #
+      # @return [Array[Integer]] left and right boundaries
+      #
       def find_boundaries(id)
         query = "SELECT #{nested_set_column(:left)}, #{nested_set_column(:right)}" +
                 "FROM #{quote_db_property(table_name)}" +
@@ -30,10 +40,21 @@ module EvenBetterNestedSet
         connection.select_rows(query).first
       end
 
+      ##
+      # Returns all nodes with children cached to a nested set
+      #
+      # @return [Array[ActiveRecord::Base]] an array of root nodes with cached children
+      #
       def nested_set
         sort_nodes_to_nested_set(find(:all, :order => "#{nested_set_column(:left)} ASC"))
       end
       
+      ##
+      # Finds all nodes matching the criteria provided, and caches their descendants
+      #
+      # @param [Object] *args same parameters as ordinary find calls
+      # @return [Array[ActiveRecord::Base], ActiveRecord::Base] the found nodes
+      #
       def find_with_nested_set(*args)
         result = find(*args)
         if result.respond_to?(:cache_nested_set)
@@ -46,6 +67,12 @@ module EvenBetterNestedSet
         result
       end
 
+      ##
+      # Given a flat list of nodes, sorts them to a tree, caching descendants in the process
+      #
+      # @param [Array[ActiveRecord::Base]] nodes an array of nodes
+      # @return [Array[ActiveRecord::Base]] an array of nodes with children cached
+      #
       def sort_nodes_to_nested_set(nodes)
         roots = []
         hashmap = {}
@@ -69,11 +96,18 @@ module EvenBetterNestedSet
         return roots
       end
       
+      ##
+      # Returns the properly quoted column name given the generic term
+      #
+      # @param [Symbol] name the name of the column to find
+      # @return [String]
       def nested_set_column(name)
         quote_db_property(nested_set_options[name])
       end
       
+      ##
       # Recalculates the left and right values for the entire tree
+      #
       def recalculate_nested_set
         transaction do
           left = 1
@@ -83,29 +117,59 @@ module EvenBetterNestedSet
         end
       end
       
+      ##
+      # Properly quotes a column name
+      #
+      # @param [String] property
+      # @return [String] quoted property
+      #
       def quote_db_property(property)
         "`#{property}`".gsub('.','`.`')
       end
       
     end
     
+    ##
+    # Checks if this root is a root node
+    #
+    # @return [Boolean] whether this node is a root node or not
+    #
     def root?
       not parent_id?
     end
     
+    ##
+    # Checks if this node is a descendant of node
+    #
+    # @param [ActiveRecord::Base] node the node to check agains
+    # @return [Boolean] whether this node is a descendant
+    #
     def descendant_of?(node)
       node.left < self.left && self.right < node.right
     end
   
-    def root
-      transaction do
+    ##
+    # Finds the root node that this node descends from
+    #
+    # @param [Boolean] force_reload forces the root node to be reloaded
+    # @return [ActiveRecord::Base] node the root node this descends from
+    #
+    def root(force_reload=nil)
+      @root = nil if force_reload
+      @root ||= transaction do
         reload_boundaries
-        @root ||= base_class.roots.find(:first, :conditions => ["#{nested_set_column(:left)} <= ? AND #{nested_set_column(:right)} >= ?", left, right])
+        base_class.roots.find(:first, :conditions => ["#{nested_set_column(:left)} <= ? AND #{nested_set_column(:right)} >= ?", left, right])
       end
     end
     
     alias_method :patriarch, :root
     
+    ##
+    # Returns a list of ancestors this node belongs to
+    #
+    # @param [Boolean] force_reload forces the list to be reloaded
+    # @return [Array[ActiveRecord::Base]] a list of nodes that this node descends from
+    #
     def ancestors(force_reload=false)
       @ancestors = nil if force_reload
       @ancestors ||= base_class.find(
@@ -114,26 +178,55 @@ module EvenBetterNestedSet
       )
     end
     
+    ##
+    # Returns a list of the node itself and all of its ancestors
+    #
+    # @param [Boolean] force_reload forces the list to be reloaded
+    # @return [Array[ActiveRecord::Base]] a list of nodes that this node descends from
+    #
     def lineage(force_reload=false)
       [self, *ancestors(force_reload)]
     end
     
+    ##
+    # Returns all nodes that descend from the same root node as this node
+    #
+    # @return [Array[ActiveRecord::Base]]
+    #
     def kin
       patriarch.family
     end
     
+    ##
+    # Returns all nodes that descend from this node
+    #
+    # @return [Array[ActiveRecord::Base]]
+    #
     def descendants
       base_class.descendants(self)
     end
     
+    ##
+    # Caches the children of this node
+    #
     def cache_nested_set
       @cached_children || base_class.sort_nodes_to_nested_set(family)
     end
     
+    ##
+    # Returns the node and all nodes that descend from it.
+    #
+    # @return [Array[ActiveRecord::Base]]
+    #
     def family
       [self, *descendants]
     end
     
+    ##
+    # Returns the ids of the node and all nodes that descend from it.
+    #
+    # @return [Array[Integer]]
+    #
     def family_ids(force_reload=false)
       return @family_ids unless @family_ids.nil? or force_reload
       
@@ -146,14 +239,29 @@ module EvenBetterNestedSet
       end
     end
     
+    ##
+    # Returns all nodes that share the same parent as this node.
+    #
+    # @return [Array[ActiveRecord::Base]]
+    #
     def generation
       root? ? base_class.roots : parent.children
     end
     
+    ##
+    # Returns all nodes that are siblings of this node
+    #
+    # @return [Array[ActiveRecord::Base]]
+    #
     def siblings
       generation - [self]
     end
     
+    ##
+    # Returns how deeply this node is nested, that is how many ancestors it has.
+    #
+    # @return [Integer] the number of ancestors of this node.
+    #
     def level
       if root?
         0
@@ -164,10 +272,15 @@ module EvenBetterNestedSet
       end
     end
     
+    ##
+    # Returns a range from the left to the right boundary of this node
+    #
+    # @return [Range] 
+    #
     def bounds
       left..right
     end
-    
+
     def children
       @cached_children || uncached_children
     end
