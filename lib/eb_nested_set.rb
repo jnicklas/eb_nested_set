@@ -4,8 +4,9 @@ module EvenBetterNestedSet
   class IllegalAssignmentError < NestedSetError; end
 
   ##
-  # Declare this model as a nested set. Automatically adds all methods in +NestedSet+ to the model, as
-  # well as parent and children associations.
+  # Declare this model as a nested set. Automatically adds all methods in
+  # +EvenBetterNestedSet::NestedSet+ to the model, as well as parent and
+  # children associations.
   #
   # == Options
   # left [Symbol]:: the name of the column that contains the left boundary [Defaults to +left+]
