@@ -26,6 +26,10 @@ You can also install it as a Rails plugin.
 
     script/plugin install git://github.com/jnicklas/even_better_nested_set.git
 
+## Contributing
+
+EvenBetterNestedSet is hosted at [GitHub](http://github.com/jnicklas/eb_nested_set/tree/master). If you'd like to contribute, please create a fork and send pull requests :)
+
 ## Declaring nested sets
 
 This is how you declare a nested set:
