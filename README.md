@@ -75,3 +75,8 @@ Add these keys to your translation file:
     even_better_nested_set:
       parent_not_in_scope: "nay, thy parent not be in scope {{scope_name}}"
       illegal_nesting: "arr tis be illegal nesting"
+
+
+## Documentation
+
+Is available at [Rubyforge](http://eb-nested-set.rubyforge.org/).
