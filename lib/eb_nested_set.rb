@@ -169,7 +169,7 @@ module EvenBetterNestedSet
       # @return [String] quoted property
       #
       def quote_db_property(property)
-        "`#{property}`".gsub('.','`.`')
+        connection.quote_column_name(property)
       end
       
     end
