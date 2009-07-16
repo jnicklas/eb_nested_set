@@ -1,1 +1,1 @@
-require File.join(File.dirname(__FILE__), 'lib', 'even_better_nested_set')
+require File.join(File.dirname(__FILE__), 'lib', 'eb_nested_set')

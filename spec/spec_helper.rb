@@ -14,13 +14,13 @@ dbconfig = case ENV["DB"]
   when "postgresql"
     {
       :adapter => 'postgresql',
-      :database => 'even_better_nested_set_test',
+      :database => 'eb_nested_set_test',
       :host => '127.0.0.1'
     }
   when "mysql"
     {
       :adapter => 'mysql',
-      :database => 'even_better_nested_set_test',
+      :database => 'eb_nested_set_test',
       :host => '127.0.0.1'
     }
   else

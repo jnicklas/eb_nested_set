@@ -371,7 +371,7 @@ module EvenBetterNestedSet
     
     def illegal_nesting
       if parent_id? and family_ids.include?(parent_id)
-        errors.add(:parent_id, I18n.t('even_better_nested_set.illegal_nesting', :default => 'cannot move node to its own descendant'))
+        errors.add(:parent_id, I18n.t('eb_nested_set.illegal_nesting', :default => 'cannot move node to its own descendant'))
       end
     end
     
@@ -456,7 +456,7 @@ module EvenBetterNestedSet
       if self.class.nested_set_options[:scope] && parent_id
         parent.reload # Make sure we are testing the record corresponding to the parent_id
         if self.send(self.class.nested_set_options[:scope]) != parent.send(self.class.nested_set_options[:scope])
-          message = I18n.t('even_better_nested_set.parent_not_in_scope',
+          message = I18n.t('eb_nested_set.parent_not_in_scope',
             :default => "cannot be a record with a different {{scope_name}} to this record",
             :scope_name => self.class.nested_set_options[:scope]
           )

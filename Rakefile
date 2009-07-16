@@ -9,7 +9,7 @@ GEM = "eb_nested_set"
 GEM_VERSION = "0.3.7"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
-HOMEPAGE = "http://github.com/jnicklas/even_better_nested_set/tree/master"
+HOMEPAGE = "http://github.com/jnicklas/eb_nested_set/tree/master"
 SUMMARY = "A cool acts_as_nested_set alternative"
 
 spec = Gem::Specification.new do |s|

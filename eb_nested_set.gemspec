@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md", "LICENSE"]
   s.files = ["LICENSE", "README.md", "Rakefile", "init.rb", "lib/eb_nested_set.rb", "spec/directory_spec.rb", "spec/employee_spec.rb", "spec/nested_set_behavior.rb", "spec/spec_helper.rb"]
   s.has_rdoc = true
-  s.homepage = %q{http://github.com/jnicklas/even_better_nested_set/tree/master}
+  s.homepage = %q{http://github.com/jnicklas/eb_nested_set/tree/master}
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.2}
   s.summary = %q{A cool acts_as_nested_set alternative}

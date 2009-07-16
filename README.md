@@ -14,8 +14,8 @@ Edge:
 
 From source:
 
-    git clone git://github.com/jnicklas/even_better_nested_set.git
-    cd even_better_nested_set
+    git clone git://github.com/jnicklas/eb_nested_set.git
+    cd eb_nested_set
     rake install
 
 If you're running Rails, just add it to your environment.rb file
@@ -24,7 +24,7 @@ If you're running Rails, just add it to your environment.rb file
 
 You can also install it as a Rails plugin.
 
-    script/plugin install git://github.com/jnicklas/even_better_nested_set.git
+    script/plugin install git://github.com/jnicklas/eb_nested_set.git
 
 ## Contributing
 
@@ -72,7 +72,7 @@ or more conveniently:
 
 Add these keys to your translation file:
 
-    even_better_nested_set:
+    eb_nested_set:
       parent_not_in_scope: "nay, thy parent not be in scope {{scope_name}}"
       illegal_nesting: "arr tis be illegal nesting"
 
