@@ -33,8 +33,8 @@ module EvenBetterNestedSet
       end
     RUBY
 
-    named_scope :roots, :conditions => { :parent_id => nil }, :order => "#{nested_set_column(:left)} asc"
-    has_many :children, :class_name => self.name, :foreign_key => :parent_id, :order => "#{nested_set_column(:left)} asc"
+    named_scope :roots, :conditions => { :parent_id => nil }
+    has_many :children, :class_name => self.name, :foreign_key => :parent_id
     belongs_to :parent, :class_name => self.name, :foreign_key => :parent_id
 
     named_scope :descendants, lambda { |node|
