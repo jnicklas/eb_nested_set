@@ -6,7 +6,7 @@ require 'spec/rake/spectask'
 require 'yard'
 
 GEM = "eb_nested_set"
-GEM_VERSION = "0.3.7"
+GEM_VERSION = "0.3.8"
 AUTHOR = "Jonas Nicklas"
 EMAIL = "jonas.nicklas@gmail.com"
 HOMEPAGE = "http://github.com/jnicklas/eb_nested_set/tree/master"
