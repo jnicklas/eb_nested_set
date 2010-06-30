@@ -402,6 +402,15 @@ describe "all nested set models", :shared => true do
       end
     end
     
+    describe "#leaf?" do
+      it "should be true if node doesn't have descendants" do
+        @r1.reload.should_not be_leaf
+        @r1c1.reload.should_not be_leaf
+        @r1c1s1.reload.should be_leaf
+        @r2c1.reload.should be_leaf
+      end
+    end
+    
     describe "#descendant_of(other_node)" do
       it "should be true if other_node is an ancestor of node" do
         reload_models @r1, @r1c2s2

@@ -182,6 +182,10 @@ module EvenBetterNestedSet
     def root?
       not parent_id?
     end
+
+    def leaf?
+      (right - left) <= 1
+    end
     
     ##
     # Checks if this node is a descendant of node
